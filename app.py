@@ -2625,6 +2625,10 @@ def cargo():
 def cargoman():
     return render_template('cargoman.html')
 
+@app.route('/cargomanemp')
+def cargomanemp():
+    return render_template('cargomanemp.html')
+
 @app.route("/add_cargo", methods=["POST"])
 def add_cargo():
     try:
@@ -2727,6 +2731,9 @@ def delete_filtered_cargo():
 def dashboard():
     return render_template('dashboard.html')
 
+@app.route('/empdashboard')
+def empdashboard():
+    return render_template('empdashboard.html')
 
 @app.route('/pic')
 def pic():
