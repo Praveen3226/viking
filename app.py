@@ -121,7 +121,7 @@ def reportCER():
         cursor = conn.cursor(pymysql.cursors.DictCursor)
 
         # Fetch all reports
-        cursor.execute("SELECT CertificateNumber, date, applicant_name, shipper, consignee, total_pkgs ,status FROM cer")
+        cursor.execute("SELECT CertificateNumber, date, applicant_name, shipper, consignee, total_pkgs ,status, sb_number FROM cer")
         cer_data = cursor.fetchall()
 
         conn.close()
