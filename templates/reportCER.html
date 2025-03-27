@@ -794,7 +794,7 @@ function applyFilters() {
         // Date filter
         let dateInRange = true;
         if (startDate || endDate) {
-            const rowDateStr = row.cells[4].textContent; // Date is in 5th column (index 4)
+            const rowDateStr = row.cells[5].textContent; // Date is in 5th column (index 4)
             const rowDate = new Date(rowDateStr);
             
             const start = startDate ? new Date(startDate) : new Date(-8640000000000000);
