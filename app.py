@@ -770,7 +770,26 @@ def submit_cerem():
         return redirect(url_for('empforms'))
 
     
+@app.route('/empcertificateedit')
+@login_required
+def empcertificateedit():
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(pymysql.cursors.DictCursor) as cursor:
+                
+                # Fetch all certificate records
+                cursor.execute("""
+                    SELECT CertificateNumber, date, applicant_name, shipper, consignee, total_pkgs, status 
+                    FROM cer
+                """)
+                cer_data = cursor.fetchall()
 
+        return render_template('empcertificateedit.html', cer_data=cer_data)
+    
+    except Exception as e:
+        print(f"Error fetching certificate records: {e}")
+        flash("An error occurred while fetching the certificate records.", "error")
+        return redirect(url_for("empdash"))
 
 
 
