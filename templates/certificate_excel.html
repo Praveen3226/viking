@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cargo Management - Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.2/xlsx.full.min.js"></script>
+    <style>
+        /* Global Styles */
+    :root {
+        --primary: #1a365d;
+        --primary-foreground: #ffffff;
+        --background: #f5f7fa;
+        --foreground: #1a202c;
+        --muted: #e2e8f0;
+        --muted-foreground: #64748b;
+        --border: #e2e8f0;
+        --input: #ffffff;
+        --ring: #3182ce;
+        --radius: 0.5rem;
+        --destructive: #e53e3e;
+    }
+    
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        line-height: 1.6;
+        color: var(--foreground);
+        background-color: var(--background);
+    }
+    
+    /* Auth Pages */
+    .grid {
+        display: grid;
+    }
+    
+    .grid-cols-1 {
+        grid-template-columns: 1fr;
+    }
+    
+    .grid-cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .min-h-screen {
+        min-height: 100vh;
+    }
+    
+    .flex {
+        display: flex;
+    }
+    
+    .items-center {
+        align-items: center;
+    }
+    
+    .justify-center {
+        justify-content: center;
+    }
+    
+    .p-8 {
+        padding: 2rem;
+    }
+    
+    .space-y-4 > * + * {
+        margin-top: 1rem;
+    }
+    
+    /* Form Elements */
+    .input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background-color: var(--input);
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    
+    .input:focus {
+        outline: none;
+        border-color: var(--ring);
+        box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.1);
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--foreground);
+    }
+    
+    /* Buttons */
+    .btn-primary {
+        padding: 0.5rem 1rem;
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+        border: none;
+        border-radius: var(--radius);
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .btn-primary:hover {
+        background-color: #2c5282;
+    }
+    
+    .btn-nav {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 0.5rem 1rem;
+        color: var(--foreground);
+        text-decoration: none;
+        border-radius: var(--radius);
+        transition: background-color 0.2s;
+    }
+    
+    .btn-nav:hover,
+    .btn-nav.active {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Dashboard Layout */
+    .dashboard {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        min-height: 100vh;
+    }
+    
+    .sidebar {
+        background-color: white;
+        border-right: 1px solid var(--border);
+        padding: 1rem;
+    }
+    
+    /* Table Styles */
+    .table-container {
+        overflow-x: auto;
+        background: white;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    th, td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    th {
+        background: var(--background);
+        font-weight: 600;
+    }
+    
+    /* Auth Tabs */
+    .tabs {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .tab-btn {
+        padding: 0.5rem;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        font-size: 1rem;
+        color: var(--muted-foreground);
+    }
+    
+    .tab-btn.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    /* Form Grid */
+    .form-grid {
+        display: grid;
+        gap: 1rem;
+    }
+    
+    @media (min-width: 768px) {
+        .md\:grid-cols-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    
+        .md\:flex {
+            display: flex;
+        }
+    
+        .hidden {
+            display: none;
+        }
+    
+        .md\:block {
+            display: block;
+        }
+    }
+    
+    /* Icons */
+    .h-4 {
+        height: 1rem;
+    }
+    
+    .w-4 {
+        width: 1rem;
+    }
+    
+    .mr-2 {
+        margin-right: 0.5rem;
+    }
+    
+    /* Text Styles */
+    .text-2xl {
+        font-size: 1.5rem;
+    }
+    
+    .text-3xl {
+        font-size: 1.875rem;
+    }
+    
+    .text-4xl {
+        font-size: 2.25rem;
+    }
+    
+    .font-bold {
+        font-weight: 700;
+    }
+    
+    .mb-6 {
+        margin-bottom: 1.5rem;
+    }
+    
+    .mb-8 {
+        margin-bottom: 2rem;
+    }
+    
+    .text-destructive {
+        color: var(--destructive);
+    }
+    
+    /* Retained Styles (Not directly replaced) */
+    .login-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        max-width: 1200px;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-container {
+        padding: 2rem;
+    }
+    
+    .info-container {
+        background: #1a365d;
+        color: white;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    h1 {
+        font-size: 1.875rem;
+        margin-bottom: 1.5rem;
+        color: #1a365d;
+    }
+    
+    
+    .cargo-form {
+        max-width: 800px;
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+        .login-container {
+            grid-template-columns: 1fr;
+        }
+        .info-container {
+            display: none;
+        }
+    }
+    .footer {
+    text-align: center;
+    padding: 10px;
+    color: white;
+    background-color: rgb(49, 45, 45);
+    border-top: 1px solid #e7e7e7;
+    margin-top: auto;
+}
+
+/* General Table Styling */
+#cargoTable {
+    width: 100%;
+    border: 1px solid #000;
+    border-collapse: collapse;
+    margin-top: 10px;
+    text-align: center;
+    font-family: Arial, sans-serif;
+}
+
+/* Table Head */
+#cargoTable thead {
+    background: #ffffff;
+    color: rgb(0, 0, 0);
+}
+
+/* Table Cells */
+#cargoTable th, #cargoTable td {
+    border: 1px solid #000;
+    padding: 8px;
+}
+
+/* Zebra Striping for Rows */
+#cargoTable tbody tr:nth-child(odd) {
+    background: #f2f2f2;
+}
+
+/* Hover Effect */
+#cargoTable tbody tr:hover {
+    background: #d1ecf1;
+    cursor: pointer;
+}
+
+/* Pagination Buttons */
+.pagination button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 5px 15px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 0 5px;
+    transition: background 0.2s;
+}
+
+.pagination button:hover {
+    background: #0056b3;
+}
+
+/* Filter and Control Panel */
+.space-y-4 > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Input and Select */
+input[type="text"], input[type="date"], select {
+    padding: 5px;
+    border: 1px solid #000;
+    border-radius: 4px;
+}
+
+/* Export Button */
+button[onclick="exportToExcel()"] {
+    background: #0d13c0;
+    color: white;
+    border: none;
+    padding: 5px 15px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    transition: background 0.2s;
+}
+
+button[onclick="exportToExcel()"]:hover {
+    background: #057ead;
+}
+
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+.pagination button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 5px 15px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 0 5px;
+    transition: background 0.2s;
+}
+.pagination button:hover {
+    background: #0056b3;
+}
+
+    </style>
+</head>
+<body>
+
+
+        <main class="p-8">
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold">Certificate Report</h1>
+             
+            </div>
+
+            <div class="space-y-4">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="text" id="searchInput" class="input w-full" placeholder="Search entries..." onkeyup="filterTable()">
+                <label for="startDate">Start Date:</label>
+                <input type="date" id="startDate" onchange="filterTable()">
+                <label for="endDate">End Date:</label>
+                <input type="date" id="endDate" onchange="filterTable()">
+                    <label for="entriesPerPage">Entries per page:</label>
+                    <select id="entriesPerPage" onchange="changeEntriesPerPage()">
+                        <option value="10">10</option>
+                        <option value="15">15</option>
+                        <option value="20">20</option>
+                    </select>
+                </div> 
+                <button onclick="exportToExcel()">Export to Excel</button>
+            <div class="table-container">
+            <table class="min-w-full bg-white border-black-300">
+                <thead>
+                    <tr class="bg-gray-200 text-gray-700">
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">ID</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Certificate Number</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Date</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Applicant Name</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Shipper</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Consignee</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Commodity</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Port of Discharge</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">SB Number</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Quantity</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Gross Weight</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">CF Agent</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Container Number</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Total Volume</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Total Packages</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Survey Data</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Created At</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Status</th>
+                        <th class="px-4 py-2 border" style="border: 2px solid black;">Type of Packing</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cer in cer_data %}
+                    <tr>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.id }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.CertificateNumber }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.date }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.applicant_name }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.shipper }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.consignee }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.commodity }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.port_of_discharge }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.sb_number }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.quantity }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.gross_weight }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.cf_agent }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.container_number }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.total_volume }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.total_pkgs }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.survey_data }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.created_at }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;">{{ cer.status }}</td>
+                        <td class="px-4 py-2 border" style="border: 2px solid black;"   >{{ cer.type_of_packing }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            
+        </div>
+
+    </div>
+    <footer class="footer">
+        &copy;  2025 <strong>Bitsmart</strong>. Crafted with care, protected with pride.
+    </footer>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+    <script>
+  
+// Global Search and Date Filtering
+function filterTable() {
+    const searchInput = document.getElementById("searchInput").value.toLowerCase();
+    const startDate = document.getElementById("startDate").value;
+    const endDate = document.getElementById("endDate").value;
+    const rows = document.querySelectorAll("table tbody tr");
+
+    rows.forEach(row => {
+        let textContent = row.textContent.toLowerCase();
+        let dateCell = row.cells[1].textContent.trim(); // Assuming date is in the 2nd column
+
+        let matchesSearch = searchInput === "" || textContent.includes(searchInput);
+        let matchesDate = true;
+
+        if (dateCell) {
+            let rowDate = new Date(dateCell);
+            let start = startDate ? new Date(startDate) : null;
+            let end = endDate ? new Date(endDate) : null;
+
+            matchesDate = (!start || rowDate >= start) && (!end || rowDate <= end);
+        }
+
+        row.style.display = (matchesSearch && matchesDate) ? "" : "none";
+    });
+
+    // Reset pagination after filtering
+    currentPage = 1;
+    displayTable();
+}
+
+// Export to Excel
+function exportToExcel() {
+    const table = document.querySelector("table");
+    const clonedTable = table.cloneNode(true);
+
+    // Remove hidden rows
+    const rows = clonedTable.querySelectorAll("tbody tr");
+    rows.forEach(row => {
+        if (row.style.display === "none") {
+            row.remove();
+        }
+    });
+
+    const workbook = XLSX.utils.table_to_book(clonedTable, { sheet: "Cargo Data" });
+    XLSX.writeFile(workbook, "Certificate_Data.xlsx");
+}
+
+// Ensure table displays properly on load
+window.onload = function () {
+    displayTable();
+};
+
+
+    </script>
+</body>
+</html> 
