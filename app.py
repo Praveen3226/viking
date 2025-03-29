@@ -30,7 +30,7 @@ def get_db_connection():
     return pymysql.connect(
         host="localhost",
         user="root",
-        password="Money2035",
+        password="codesql",
         database="leads",
         cursorclass=pymysql.cursors.DictCursor  # Ensures dictionary output
 
@@ -933,8 +933,53 @@ def update_certificate(CertificateNumber):
 #  and ensures data integrity. Admins should review any changes     #
 #  carefully before modifying this section.                         #
 #####################################################################
+@app.route('/excel_dash')
+@login_required
+def excel_dash():
+    return render_template('excel_dash.html')
 
 
+@app.route('/emp_excel')
+@login_required
+def emp_excel():
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+        # Fetch relevant data from the `form` table
+        cursor.execute("SELECT * FROM form")
+        form = cursor.fetchall()
+
+        conn.close()
+
+        # Pass the data to the report.html template
+        return render_template('emp_excel.html', form=form)
+    except Error as e:
+        print(f"Error: {e}")
+        flash('An error occurred while fetching the reports. Please try again.', 'error')
+        return render_template('emp_excel.html')
+
+@app.route('/container_excel')
+@login_required
+def container_excel():     
+ 
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+
+        # Fetch all container records
+        cursor.execute("SELECT * FROM container")
+        container_data = cursor.fetchall()
+
+        conn.close()
+
+        return render_template('container_excel.html', container_data=container_data)
+    except Exception as e:
+        print(f"Error: {e}")
+        flash('An error occurred while fetching the container records.', 'error')
+        return redirect(url_for('container_excel'))
 
 
 
