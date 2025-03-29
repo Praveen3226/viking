@@ -30,7 +30,7 @@ def get_db_connection():
     return pymysql.connect(
         host="localhost",
         user="root",
-        password="codesql",
+        password="Money2035",
         database="leads",
         cursorclass=pymysql.cursors.DictCursor  # Ensures dictionary output
 
