@@ -653,7 +653,7 @@ function createSurveyMeasuresTable() {
         <table class="w-full border-collapse border border-black text-sm font-bold" style="text-align: center; width: 100%;">
             <thead>
                 <tr>
-                    <th class="border border-black p-2">Mark & No.s</th>
+                    <th class="border border-black p-4" >Mark & No.s</th>
                     <th class="border border-black p-2">No. of Pkgs</th>
                     <th class="border border-black p-2">Length</th>
                     <th class="border border-black p-2">Breadth</th>
@@ -662,14 +662,14 @@ function createSurveyMeasuresTable() {
                     <th class="border border-black p-2">Total Volume(Cu.M)</th>
                 </tr>
             </thead>
-            <tbody class="font-normal">
+            <tbody class="font-normal ">
                 ${Array.from(document.querySelectorAll('tbody tr'))
                     .map(row => {
                         const inputs = row.querySelectorAll('input');
                         return inputs.length >= 7 ? `
                             <tr>
                                 ${Array.from(inputs).slice(1).map(input => // Skip first input
-                                    `<td class="border border-black p-2">${input.value || ''}</td>`
+                                    `<td class="border border-black p-4">${input.value || ''}</td>`
                                 ).join('')}
                             </tr>
                         ` : '';
