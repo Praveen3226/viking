@@ -190,6 +190,7 @@ h1 {
         border: none;
         cursor: pointer;
         margin: 5px;
+        
     }
 
     .btn:hover {
@@ -432,102 +433,93 @@ async function printCertificate() {
     try {
         const { jsPDF } = window.jspdf;
         const form = document.querySelector('form');
-        
+
         // Validate required elements
         if (!form) throw new Error('Form not found');
         if (!window.jspdf || !html2canvas) throw new Error('Required libraries not loaded');
 
-        // Create PDF content containers for both pages
-        const pdfContainer1 = document.createElement('div');
-        pdfContainer1.style.width = '210mm';
-        pdfContainer1.style.minHeight = '297mm';
-        pdfContainer1.style.padding = '20px';
-        pdfContainer1.style.backgroundColor = 'white';
-        pdfContainer1.style.position = 'fixed';
-        pdfContainer1.style.left = '-9999px';
-        document.body.appendChild(pdfContainer1);
-        
-        const pdfContainer2 = document.createElement('div');
-        pdfContainer2.style.width = '210mm';
-        pdfContainer2.style.minHeight = '297mm';
-        pdfContainer2.style.padding = '20px';
-        pdfContainer2.style.backgroundColor = 'white';
-        pdfContainer2.style.position = 'fixed';
-        pdfContainer2.style.left = '-9999px';
-        document.body.appendChild(pdfContainer2);
+        // Create a single PDF content container
+        const pdfContainer = document.createElement('div');
+        pdfContainer.style.width = '210mm';
+        pdfContainer.style.minHeight = '297mm';
+        pdfContainer.style.padding = '20px';
+        pdfContainer.style.backgroundColor = 'white';
+        pdfContainer.style.position = 'fixed';
+        pdfContainer.style.left = '-9999px';
+        pdfContainer.style.top = '0';
+        pdfContainer.style.zIndex = '-1';
+        pdfContainer.style.overflow = 'hidden';
+        document.body.appendChild(pdfContainer);
 
-        // Shared styles for both pages
+        // Shared styles
         const sharedStyles = `
             <style>
                 .pdf-table {
-                    width: auto;
                     border-collapse: collapse;
                     margin: 15px 0;
                     border: 2px solid black;
                 }
-                
-                .pdf-table th, 
-                .pdf-table td {
+                .pdf-table th, .pdf-table td {
                     border: 1px solid black;
                     padding: 8px;
                     text-align: left;
                 }
-                
-                .pdf-table th {
-                    width: auto;
-                    white-space: nowrap;
-                }
-                
-                .pdf-table td {
-                    width: 100%;
-                }
-                
-                .pdf-tableh th,
-                .pdf-tableh td {
+                .pdf-tableh th, .pdf-tableh td {
                     padding: 6px;
                     box-sizing: border-box;
                     white-space: nowrap;
                 }
-                
                 .pdf-tableh td:last-child {
                     text-align: right;
                 }
-                
                 .pdf-tableh {
                     width: 100%;
-                    font-size: 14px;
                     border-collapse: collapse;
                     border-top: 2px solid black;
                     border-bottom: 2px solid black;
                     text-align: left;
                 }
-                
                 .certificate-title {
-                    text-align: center;
-                    background-color: #b91c1c;
+                    align-items: center ; 
+                    justify-content: center ; 
+                    background-color: #b91c1c ;
                     color: white;
-                    padding: 10px;
+                    padding: 6px ;
                     font-size: 14px;
                     font-weight: bold;
-                    margin-top: 10px;
+                    margin-top: 5px;
+                    margin-bottom: 5px;
+                    text-align: center; /* keep this */
+                    height :50px;
+                }
+
+                .summary-box {
+                    border: 1px solid #000;
+                    padding: 10px;
+                    flex: 1 1 30%;
+                    margin-right: 10px;
+                    margin-bottom: 10px;
+                    text-align: center;
+                    min-width: 200px;
                 }
             </style>
         `;
 
-        // Create header content (reused in both pages)
+        // Header content
         const headerContent = `
             <div class="header" style="display: flex; align-items: center; text-align: center;">
                 <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" 
                     style="height: 120px; margin-right: 15px; margin-top: 10px;">
                 <div style="text-align: center; flex-grow: 1; margin-left: -100px;">
-                    <h1 style="font-family: 'Cooper Black', sans-serif; font-weight: normal; font-size: 28px; margin: 0; display: inline-block; vertical-align: middle;">
-                        VIKING MARINE INC.
-                    </h1>
+<h1 style="font-family: 'Cooper Black', sans-serif; font-weight: normal; font-size: 28px; margin: 0; display: inline-block; vertical-align: middle; color: red;">
+    VIKING MARINE INC.
+</h1>
+            
                     <div style="margin-top: 3px; line-height: 1.2;">
                         <p class="text-sm font-semibold" style="margin: 0;">SURVEYORS AND CONSULTING ENGINEERS</p>
-                        <p class="text-sm" style="margin: 0;"># 143,Dinnur Village, Opp. India SATCOM, Kadugodi Post Bangalore - 560067.</p>
+                        <p class="text-sm" style="margin: 0;">#143, Dinnur Village, Opp. India SATCOM, Kadugodi Post Bangalore - 560067.</p>
                         <p class="text-sm" style="margin: 0;">Ph.: +919036015240, +919035015240 &amp; +919036015243</p>
-                        <p class="text-sm" style="margin: 0;">E-mail : ops@vikingmarine.in, Website : www.vikingmarine.in</p>
+                        <p class="text-sm" style="margin: 0;">E-mail: ops@vikingmarine.in, Website: www.vikingmarine.in</p>
                     </div>
                 </div>
             </div>
@@ -539,53 +531,52 @@ async function printCertificate() {
                 </tr>
             </table>
             <div class="certificate-title">
-                CERTIFICATE OF MEASUREMENT 
+                CERTIFICATE OF MEASUREMENT
             </div>
         `;
 
-        // Page 1 Content - Header and Applicant table
-        pdfContainer1.innerHTML = `
+        // Set merged content
+        pdfContainer.innerHTML = `
             ${sharedStyles}
             ${headerContent}
             ${createApplicantTable(form)}
+            
             <h2 style="font-size: 18px; font-weight: bold; margin-top: 15px; margin-bottom: 10px;">
                 Survey Measures
             </h2>
+
             ${createSurveyMeasuresTable()}
+
+<div style="margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+    <div class="summary-box" style="border: 1px solid #000; padding: 8px 12px; width: 30%; text-align: center; font-size: 14px;">
+        <p><strong>Total No. of Pkgs:</strong></p>
+        <p>${form.totalPkgs.value || 'N/A'}</p>
+    </div>
+    <div class="summary-box" style="border: 1px solid #000; padding: 8px 12px; width: 30%; text-align: center; font-size: 14px;">
+        <p><strong>Gross Wt In Kgs. (As Declared):</strong></p>
+        <p>${form.gross_weight.value || 'N/A'}</p>
+    </div>
+    <div class="summary-box" style="border: 1px solid #000; padding: 8px 12px; width: 30%; text-align: center; font-size: 14px;">
+        <p><strong>Total Volume (Cu. M):</strong></p>
+        <p>${form.totalVolume.value || 'N/A'}</p>
+    </div>
+</div>
+
+
+<div style="margin-top: 30px; width: 100%;">
+    <p style="text-transform: uppercase; font-weight: bold; font-size: 14px; margin-bottom: 20px;">
+        "ISSUED WITHOUT PREJUDICE"
+    </p>
+
+    <p style="margin-top: 20px; font-weight: 600; font-size: 16px;">
+        For Viking Marine Inc.<br><br><br>
+        Authorised Signatory
+    </p>
+</div>
+
         `;
 
-        // Page 2 Content - Header, Summary boxes and signatures
-        pdfContainer2.innerHTML = `
-            ${sharedStyles}
-            ${headerContent}
-            <div style="margin-top: 20px; display: flex; justify-content: space-between;">
-                <div style="border: 1px solid #000; padding: 10px; flex: 1; margin-right: 10px; text-align: center;">
-                    <p><strong>Total No. of Pkgs:</strong></p>
-                    <p>${form.totalPkgs.value || 'N/A'}</p>
-                </div>
-                <div style="border: 1px solid #000; padding: 10px; flex: 1; margin-right: 10px; text-align: center;">
-                    <p><strong>Gross Wt In Kgs.(As Declared):</strong></p>
-                    <p>${form.gross_weight.value || 'N/A'}</p>
-                </div>
-                <div style="border: 1px solid #000; padding: 10px; flex: 1; text-align: center;">
-                    <p><strong>Total Volume (Cu. M):</strong></p>
-                    <p>${form.totalVolume.value || 'N/A'}</p>
-                </div>
-            </div>
-            <div class="mt-8 w-full" style="margin-top: 30px;">
-                <div class="text-left">
-                    <p class="text-sm text-left font-bold" style="text-transform: uppercase;">
-                        "ISSUED WITHOUT PREJUDICE"
-                    </p><br><br>                 
-                    <p class="font-semibold" style="text-align: left;">
-                        For Viking Marine Inc.<br><br><br>
-                        Authorised Signatory
-                    </p>
-                </div>
-            </div>
-        `;
-
-        // Generate PDFs from both containers
+        // Generate PDF
         const pdfOptions = {
             scale: 2,
             logging: true,
@@ -593,32 +584,37 @@ async function printCertificate() {
             backgroundColor: '#FFFFFF'
         };
 
-        // Create PDF with both pages
-        const canvas1 = await html2canvas(pdfContainer1, pdfOptions);
-        const canvas2 = await html2canvas(pdfContainer2, pdfOptions);
-        
+        const canvas = await html2canvas(pdfContainer, pdfOptions);
+        const imgData = canvas.toDataURL('image/png');
+
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'mm',
             format: 'a4'
         });
 
-        // Add first page
         const imgWidth = 210;
-        const imgHeight1 = (canvas1.height * imgWidth) / canvas1.width;
-        pdf.addImage(canvas1, 'PNG', 0, 0, imgWidth, imgHeight1);
-        
-        // Add second page
-        pdf.addPage();
-        const imgHeight2 = (canvas2.height * imgWidth) / canvas2.width;
-        pdf.addImage(canvas2, 'PNG', 0, 0, imgWidth, imgHeight2);
-        
-        // Save PDF
+        const pageHeight = 297;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        // Add first page
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        // Handle overflow if content exceeds one page
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+
         pdf.save(`Certificate_${form.CertificateNumber.value || 'Report'}.pdf`);
 
         // Cleanup
-        document.body.removeChild(pdfContainer1);
-        document.body.removeChild(pdfContainer2);
+        document.body.removeChild(pdfContainer);
 
     } catch (error) {
         console.error('PDF generation failed:', error);
@@ -626,13 +622,14 @@ async function printCertificate() {
     }
 }
 
+
 function createApplicantTable(form) {
     return `
         <table class="pdf-table">
             <tbody>
                 <tr>
                     <th>Name of Applicant</th>
-                    <td colspan="3">${(form.applicantTitle.value || '') + ' ' + (form.applicantName.value || '')}</td>
+                    <td colspan="3" class="vertical-align: middle;">${(form.applicantTitle.value || '') + ' ' + (form.applicantName.value || '')}</td>
                 </tr>
                 <tr>
                     <th>Shipper</th>
@@ -663,27 +660,31 @@ function createApplicantTable(form) {
 
 function createSurveyMeasuresTable() {
     return `
-        <table class="w-full border-collapse border border-black text-sm font-bold" style="text-align: center; width: 100%;">
-            <thead>
-                <tr>
-                    <th class="border border-black p-3" >Mark & No.s</th>
-                    <th class="border border-black p-2">No. of Pkgs</th>
-                    <th class="border border-black p-2">Length</th>
-                    <th class="border border-black p-2">Breadth</th>
-                    <th class="border border-black p-2">Height</th>
-                    <th class="border border-black p-2">Volume of 1 Unit</th>
-                    <th class="border border-black p-2">Total Volume(Cu.M)</th>
-                </tr>
-            </thead>
-            <tbody class="font-normal ">
+
+<table class="w-full border-collapse border border-black text-sm font-bold" 
+       style="width: 100%; border-collapse: collapse;">
+    <thead>
+        <tr>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">Mark & No.s</th>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">No. of Pkgs</th>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">Length</th>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">Breadth</th>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">Height</th>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">Volume of 1 Unit</th>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">Total Volume (Cu.M)</th>
+        </tr>
+    </thead>
+            <tbody class="font-normal">
                 ${Array.from(document.querySelectorAll('tbody tr'))
                     .map(row => {
                         const inputs = row.querySelectorAll('input');
                         return inputs.length >= 7 ? `
                             <tr>
-                                ${Array.from(inputs).slice(1).map(input => // Skip first input
-                                    `<td class="border border-black p-4">${input.value || ''}</td>`
-                                ).join('')}
+                                ${Array.from(inputs).slice(1).map(input => `
+                                    <td class="border border-black p-2" style="text-align: center; vertical-align: middle;">
+                                        ${input.value || ''}
+                                    </td>
+                                `).join('')}
                             </tr>
                         ` : '';
                     }).join('')}
@@ -691,6 +692,7 @@ function createSurveyMeasuresTable() {
         </table>
     `;
 }
+
 
 
 
