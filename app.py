@@ -17,7 +17,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Required for session management
-app.permanent_session_lifetime = timedelta(minutes=30) # Auto logout after 30 minutes of inactivity
+app.permanent_session_lifetime = timedelta(minutes=60) # Auto logout after 30 minutes of inactivity
 UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
