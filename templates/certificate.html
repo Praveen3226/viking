@@ -568,10 +568,12 @@ async function printCertificate() {
         "ISSUED WITHOUT PREJUDICE"
     </p>
 
-    <p style="margin-top: 20px; font-weight: 600; font-size: 16px;">
-        For Viking Marine Inc.<br><br><br>
-        Authorised Signatory
-    </p>
+    <div style="text-align: right;">
+        <p style="margin-top: 20px; font-weight: 600; font-size: 16px;">
+            For Viking Marine Inc.<br><br><br>
+            Authorised Signatory
+        </p>
+    </div>
 </div>
 
         `;
@@ -665,13 +667,13 @@ function createSurveyMeasuresTable() {
        style="width: 100%; border-collapse: collapse;">
     <thead>
         <tr>
-            <th class="border border-black p-3" style="text-align: center; vertical-align: middle; ">Mark & No.s</th>
-            <th class="border border-black p-3" style="text-align: center; vertical-align: middle;">No. of Pkgs</th>
-            <th class="border border-black p-3" style="text-align: center; vertical-align: middle;">Length</th>
-            <th class="border border-black p-3" style="text-align: center; vertical-align: middle;">Breadth</th>
-            <th class="border border-black p-3" style="text-align: center; vertical-align: middle;">Height</th>
-            <th class="border border-black p-3" style="text-align: center; vertical-align: middle;">Volume of 1 Unit</th>
-            <th class="border border-black p-3" style="text-align: center; vertical-align: middle;">Total Volume (Cu.M)</th>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">Mark & No.s</th>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">No. of Pkgs</th>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">Length</th>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">Breadth</th>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">Height</th>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">Volume of 1 Unit</th>
+            <th class="border border-black p-2" style="text-align: center; vertical-align: middle;">Total Volume (Cu.M)</th>
         </tr>
     </thead>
             <tbody class="font-normal">
@@ -681,7 +683,7 @@ function createSurveyMeasuresTable() {
                         return inputs.length >= 7 ? `
                             <tr>
                                 ${Array.from(inputs).slice(1).map(input => `
-                                    <td class="border border-black p-3" style="text-align: center; vertical-align: middle;">
+                                    <td class="border border-black p-2" style="text-align: center; vertical-align: middle;">
                                         ${input.value || ''}
                                     </td>
                                 `).join('')}
