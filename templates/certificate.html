@@ -508,7 +508,7 @@ if (headerImage) {
         pdf.setTextColor(0, 0, 0);
 
         // Draw table structure for applicant and shipment details
-pdf.autoTable({
+        pdf.autoTable({
     startY: cursorY,
     body: [
         ['Name of Applicant', `${form.applicantTitle.value || ''} ${form.applicantName.value || ''}`],
@@ -525,18 +525,23 @@ pdf.autoTable({
     styles: {
         fontSize: 10,
         cellPadding: 2,
-        valign: 'middle'
+        valign: 'middle',
+        lineWidth: 0.2,
+        lineColor: [0, 0, 0],  // 🔥 Black border
     },
     headStyles: {
         fillColor: [255, 255, 255],
         textColor: [0, 0, 0],
-        fontStyle: 'bold'
+        fontStyle: 'bold',
+        lineColor: [0, 0, 0],  // 🔥 Black border
+        lineWidth: 0.2
     },
     columnStyles: {
-        0: { cellWidth: 'wrap' }, // Field column auto-wraps to fit content
-        1: { cellWidth: 'auto' }  // Details column takes remaining space
+        0: { cellWidth: 'wrap' },
+        1: { cellWidth: 'auto' }
     }
 });
+
 
 
         cursorY = pdf.lastAutoTable.finalY + 8;
@@ -552,22 +557,30 @@ pdf.autoTable({
 const surveyTableData = getSurveyTableData();
 if (surveyTableData.length > 0) {
     pdf.autoTable({
-        startY: cursorY,
-        head: [[
-            'Mark & No.s', 'No. of Pkgs', 'Length', 'Breadth', 'Height', 'Volume of 1 Unit', 'Total Volume (Cu.M)'
-        ]],
-        body: surveyTableData,
-        theme: 'grid',
-        margin: { left: marginLeft },
-        styles: { fontSize: 10, cellPadding: 1, halign: 'center', valign: 'middle' },
-        headStyles: {
-            fillColor: [255, 255, 255],
-            textColor: [0, 0, 0],
-            fontStyle: 'bold',
-            lineWidth: 0.1,       // Add border
-             // Black border color
-        }
-    });
+    startY: cursorY,
+    head: [[
+        'Mark & No.s', 'No. of Pkgs', 'Length', 'Breadth', 'Height', 'Volume of 1 Unit', 'Total Volume (Cu.M)'
+    ]],
+    body: surveyTableData,
+    theme: 'grid',
+    margin: { left: marginLeft },
+    styles: {
+        fontSize: 10,
+        cellPadding: 1,
+        halign: 'center',
+        valign: 'middle',
+        lineColor: [0, 0, 0],  // 🔥 Black border
+        lineWidth: 0.2
+    },
+    headStyles: {
+        fillColor: [255, 255, 255],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+        lineColor: [0, 0, 0],  // 🔥 Black border
+        lineWidth: 0.2
+    }
+});
+
     cursorY = pdf.lastAutoTable.finalY + 5;
 } else {
     pdf.text('No Survey Measures Data Available.', marginLeft, cursorY);
