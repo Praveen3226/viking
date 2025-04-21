@@ -247,7 +247,7 @@ h1 {
         </div>
         
         <form method="POST" action="{{ url_for('submit_cerem') }}">
-            <div class="flex justify-between mb-4">
+         <div class="flex justify-between mb-4">
                 <div>
                     <label class="text-sm">Report No.</label>
                     <input type="text" id="CertificateNumber" name="CertificateNumber" class="border border-gray-300 rounded p-1 ml-2" readonly style="background-color: gold; color: black;" />
@@ -420,192 +420,158 @@ async function printCertificate() {
     try {
         const { jsPDF } = window.jspdf;
         const form = document.querySelector('form');
-        
-        // Validate required elements
+
         if (!form) throw new Error('Form not found');
-        if (!window.jspdf || !html2canvas) throw new Error('Required libraries not loaded');
+        if (!window.jspdf) throw new Error('jsPDF library not loaded');
 
-        // Create PDF content containers for both pages
-        const pdfContainer1 = document.createElement('div');
-        pdfContainer1.style.width = '210mm';
-        pdfContainer1.style.minHeight = '297mm';
-        pdfContainer1.style.padding = '20px';
-        pdfContainer1.style.backgroundColor = 'white';
-        pdfContainer1.style.position = 'fixed';
-        pdfContainer1.style.left = '-9999px';
-        document.body.appendChild(pdfContainer1);
-        
-        const pdfContainer2 = document.createElement('div');
-        pdfContainer2.style.width = '210mm';
-        pdfContainer2.style.minHeight = '297mm';
-        pdfContainer2.style.padding = '20px';
-        pdfContainer2.style.backgroundColor = 'white';
-        pdfContainer2.style.position = 'fixed';
-        pdfContainer2.style.left = '-9999px';
-        document.body.appendChild(pdfContainer2);
-
-        // Shared styles for both pages
-        const sharedStyles = `
-            <style>
-                .pdf-table {
-                    width: auto;
-                    border-collapse: collapse;
-                    margin: 15px 0;
-                    border: 2px solid black;
-                }
-                
-                .pdf-table th, 
-                .pdf-table td {
-                    border: 1px solid black;
-                    padding: 8px;
-                    text-align: left;
-                }
-                
-                .pdf-table th {
-                    width: auto;
-                    white-space: nowrap;
-                }
-                
-                .pdf-table td {
-                    width: 100%;
-                }
-                
-                .pdf-tableh th,
-                .pdf-tableh td {
-                    padding: 6px;
-                    box-sizing: border-box;
-                    white-space: nowrap;
-                }
-                
-                .pdf-tableh td:last-child {
-                    text-align: right;
-                }
-                
-                .pdf-tableh {
-                    width: 100%;
-                    border-collapse: collapse;
-                    border-top: 2px solid black;
-                    border-bottom: 2px solid black;
-                    text-align: left;
-                }
-                
-                .certificate-title {
-                    text-align: center;
-                    background-color: #b91c1c;
-                    color: white;
-                    padding: 10px;
-                    font-size: 16px;
-                    font-weight: bold;
-                    margin-top: 10px;
-                }
-            </style>
-        `;
-
-        // Create header content (reused in both pages)
-        const headerContent = `
-            <div class="header" style="display: flex; align-items: center; text-align: center;">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" 
-                    style="height: 120px; margin-right: 15px; margin-top: 10px;">
-                <div style="text-align: center; flex-grow: 1; margin-left: -100px;">
-                    <h1 style="font-family: 'Cooper Black', sans-serif; font-weight: normal; font-size: 28px; margin: 0; display: inline-block; vertical-align: middle;">
-                        VIKING MARINE INC.
-                    </h1>
-                    <div style="margin-top: 3px; line-height: 1.2;">
-                        <p class="text-sm font-semibold" style="margin: 0;">SURVEYORS AND CONSULTING ENGINEERS</p>
-                        <p class="text-sm" style="margin: 0;"># 143,Dinnur Village, Opp. India SATCOM, Kadugodi Post Bangalore - 560067.</p>
-                        <p class="text-sm" style="margin: 0;">Ph.: +919036015240, +919035015240 &amp; +919036015243</p>
-                        <p class="text-sm" style="margin: 0;">E-mail : ops@vikingmarine.in, Website : www.vikingmarine.in</p>
-                    </div>
-                </div>
-            </div>
-            <br>
-            <table class="pdf-tableh">
-                <tr>
-                    <td><strong>Certificate No.:</strong> ${form.CertificateNumber.value || ''}</td>
-                    <td><strong>Date:</strong> ${new Date(form.date.value).toLocaleDateString('en-GB') || ''}</td>
-                </tr>
-            </table>
-            <div class="certificate-title">
-                CERTIFICATE OF MEASUREMENT 
-            </div>
-        `;
-
-        // Page 1 Content - Header and Applicant table
-        pdfContainer1.innerHTML = `
-            ${sharedStyles}
-            ${headerContent}
-            ${createApplicantTable(form)}
-            <h2 style="font-size: 18px; font-weight: bold; margin-top: 15px; margin-bottom: 10px;">
-                Survey Measures
-            </h2>
-            ${createSurveyMeasuresTable()}
-        `;
-
-        // Page 2 Content - Header, Summary boxes and signatures
-        pdfContainer2.innerHTML = `
-            ${sharedStyles}
-            ${headerContent}
-            <div style="margin-top: 20px; display: flex; justify-content: space-between;">
-                <div style="border: 1px solid #000; padding: 10px; flex: 1; margin-right: 10px; text-align: center;">
-                    <p><strong>Total No. of Pkgs:</strong></p>
-                    <p>${form.totalPkgs.value || 'N/A'}</p>
-                </div>
-                <div style="border: 1px solid #000; padding: 10px; flex: 1; margin-right: 10px; text-align: center;">
-                    <p><strong>Gross Wt In Kgs.(As Declared):</strong></p>
-                    <p>${form.gross_weight.value || 'N/A'}</p>
-                </div>
-                <div style="border: 1px solid #000; padding: 10px; flex: 1; text-align: center;">
-                    <p><strong>Total Volume (Cu. M):</strong></p>
-                    <p>${form.totalVolume.value || 'N/A'}</p>
-                </div>
-            </div>
-            <div class="mt-8 w-full" style="margin-top: 30px;">
-                <div class="text-left">
-                    <p class="text-sm text-left font-bold" style="text-transform: uppercase;">
-                        "ISSUED WITHOUT PREJUDICE"
-                    </p><br><br><br>                 
-                    <p class="font-semibold" style="text-align: left;">
-                        For Viking Marine Inc.<br><br><br><br><br><br>
-                        Authorised Signatory
-                    </p>
-                </div>
-            </div>
-        `;
-
-        // Generate PDFs from both containers
-        const pdfOptions = {
-            scale: 2,
-            logging: true,
-            useCORS: true,
-            backgroundColor: '#FFFFFF'
-        };
-
-        // Create PDF with both pages
-        const canvas1 = await html2canvas(pdfContainer1, pdfOptions);
-        const canvas2 = await html2canvas(pdfContainer2, pdfOptions);
-        
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'mm',
             format: 'a4'
         });
 
-        // Add first page
-        const imgWidth = 210;
-        const imgHeight1 = (canvas1.height * imgWidth) / canvas1.width;
-        pdf.addImage(canvas1, 'PNG', 0, 0, imgWidth, imgHeight1);
-        
-        // Add second page
-        pdf.addPage();
-        const imgHeight2 = (canvas2.height * imgWidth) / canvas2.width;
-        pdf.addImage(canvas2, 'PNG', 0, 0, imgWidth, imgHeight2);
-        
-        // Save PDF
-        pdf.save(`Certificate_${form.CertificateNumber.value || 'Report'}.pdf`);
+        const marginLeft = 15;
 
-        // Cleanup
-        document.body.removeChild(pdfContainer1);
-        document.body.removeChild(pdfContainer2);
+                                                           
+let cursorY = 5; // or 10 if you need more space at the top
+
+// Load the full header image
+const headerUrl = '/static/logo2.png';  // your custom header image
+const headerImage = await loadImageProps(headerUrl);
+
+if (headerImage) {
+    const headerX = 15;      // Left margin
+    const headerY = cursorY; // Top position
+    const headerWidth = 180; // Almost full width of A4 (210mm - margins)
+    const headerHeight = 45; // Adjust based on your image
+
+    // Add image
+    pdf.addImage(headerImage, 'PNG', headerX, headerY, headerWidth, headerHeight);
+
+    // Move cursorY below the image
+    cursorY += headerHeight + 5;
+} else {
+    alert('Header image could not be loaded.');
+}
+
+
+        cursorY += 5;
+
+        pdf.setFontSize(12);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(`Certificate No.: ${form.CertificateNumber.value || ''}`, marginLeft, cursorY);
+        pdf.text(`Date: ${new Date(form.date.value).toLocaleDateString('en-GB')}`, 210 - marginLeft, cursorY, { align: 'right' });
+        const boxTop = cursorY - 5;      // a little above the text
+        const boxBottom = cursorY + 3;   // a little below the text
+        const boxLeft = marginLeft - 1;  // slightly before text starts
+        const boxRight = 210 - marginLeft + 1; // slightly after text ends
+
+        pdf.setDrawColor(0); // black
+        pdf.setLineWidth(0.2);
+
+        // Top border
+        pdf.line(boxLeft, boxTop, boxRight, boxTop);
+
+        // Bottom border
+        pdf.line(boxLeft, boxBottom, boxRight, boxBottom);
+        cursorY += 5;
+
+        pdf.setFillColor(185, 28, 28);
+        pdf.rect(marginLeft, cursorY, 180, 10, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(11);
+        pdf.text('CERTIFICATE OF MEASUREMENT', 105, cursorY + 7, { align: 'center' });
+
+        cursorY += 15;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(0, 0, 0);
+
+        // Draw table structure for applicant and shipment details
+pdf.autoTable({
+    startY: cursorY,
+    body: [
+        ['Name of Applicant', `${form.applicantTitle.value || ''} ${form.applicantName.value || ''}`],
+        ['Shipper', form.shipper.value || ''],
+        ['Consignee', form.consignee.value || ''],
+        ['Commodity', form.commodity.value || ''],
+        ['Port of Discharge', form.portOfDischarge.value || ''],
+        ['S.B. No./ Invoice No.', form.sb_number.value || ''],
+        ['C & F Agent', form.cf_agent.value || ''],
+        ['Type Of Packing', form.type_of_packing.value || '']
+    ],
+    theme: 'grid',
+    margin: { left: marginLeft },
+    styles: {
+        fontSize: 10,
+        cellPadding: 2,
+        valign: 'middle'
+    },
+    headStyles: {
+        fillColor: [255, 255, 255],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold'
+    },
+    columnStyles: {
+        0: { cellWidth: 'wrap' }, // Field column auto-wraps to fit content
+        1: { cellWidth: 'auto' }  // Details column takes remaining space
+    }
+});
+
+
+        cursorY = pdf.lastAutoTable.finalY + 8;
+
+       // Modified bold version
+    pdf.setFontSize(12);  // Optional: increase size for emphasis
+    pdf.setFont("helvetica", "bold");  // Set bold style
+    pdf.text('SURVEY MEASURES', marginLeft, cursorY);
+    pdf.setFont("helvetica", "normal");  // Reset to normal font
+
+        cursorY += 4;
+
+const surveyTableData = getSurveyTableData();
+if (surveyTableData.length > 0) {
+    pdf.autoTable({
+        startY: cursorY,
+        head: [[
+            'Mark & No.s', 'No. of Pkgs', 'Length', 'Breadth', 'Height', 'Volume of 1 Unit', 'Total Volume (Cu.M)'
+        ]],
+        body: surveyTableData,
+        theme: 'grid',
+        margin: { left: marginLeft },
+        styles: { fontSize: 10, cellPadding: 1, halign: 'center', valign: 'middle' },
+        headStyles: {
+            fillColor: [255, 255, 255],
+            textColor: [0, 0, 0],
+            fontStyle: 'bold',
+            lineWidth: 0.1,       // Add border
+             // Black border color
+        }
+    });
+    cursorY = pdf.lastAutoTable.finalY + 5;
+} else {
+    pdf.text('No Survey Measures Data Available.', marginLeft, cursorY);
+    cursorY += 10;
+}
+
+        pdf.setFont(undefined, 'bold');
+        drawSummaryBox(pdf, 'Total No. of Pkgs:', form.totalPkgs.value || 'N/A', marginLeft, cursorY);
+        drawSummaryBox(pdf, 'Gross Wt (Kgs) Declared:', form.gross_weight.value || 'N/A', marginLeft + 65, cursorY);
+        drawSummaryBox(pdf, 'Total Volume (Cu. M):', form.totalVolume.value || 'N/A', marginLeft + 130, cursorY);
+        pdf.setFont(undefined, 'normal');
+        
+
+        cursorY += 30;
+
+        pdf.setFontSize(12);
+        pdf.setFont(undefined, 'bold');
+        pdf.text('"ISSUED WITHOUT PREJUDICE"', marginLeft, cursorY);
+
+        pdf.setFont(undefined, 'normal');
+        pdf.text('For Viking Marine Inc.', 195 - marginLeft, cursorY, { align: 'right' });
+        pdf.text('Authorised Signatory', 195 - marginLeft, cursorY + 15, { align: 'right' });
+
+        pdf.save(`Certificate_${form.CertificateNumber.value || 'Report'}.pdf`);
 
     } catch (error) {
         console.error('PDF generation failed:', error);
@@ -613,71 +579,59 @@ async function printCertificate() {
     }
 }
 
-function createApplicantTable(form) {
-    return `
-        <table class="pdf-table">
-            <tbody>
-                <tr>
-                    <th>Name of Applicant</th>
-                    <td colspan="3">${(form.applicantTitle.value || '') + ' ' + (form.applicantName.value || '')}</td>
-                </tr>
-                <tr>
-                    <th>Shipper</th>
-                    <td>${form.shipper.value || ''}</td>
-                    <th>Consignee</th>
-                    <td>${form.consignee.value || ''}</td>
-                </tr>
-                <tr>
-                    <th>Commodity</th>
-                    <td>${form.commodity.value || ''}</td>
-                    <th>Port of Discharge</th>
-                    <td>${form.portOfDischarge.value || ''}</td>
-                </tr>
-                <tr>
-                    <th>S.B. No./ Invoice No.</th>
-                    <td>${form.sb_number.value || ''}</td>
-                    <th>C & F Agent</th>
-                    <td>${form.cf_agent.value || ''}</td>
-                </tr>
-                <tr>
-                    <th>Type Of Packing</th>
-                    <td>${form.type_of_packing.value || ''}</td>
-                </tr>
-            </tbody>
-        </table>
-    `;
+function drawKeyValue(pdf, key, value, x, y) {
+    pdf.setFontSize(10);
+    pdf.text(`${key}:`, x, y);
+    pdf.text(value, x, y + 5);
 }
 
-function createSurveyMeasuresTable() {
-    return `
-        <table class="w-full border-collapse border border-black text-sm font-bold" style="text-align: center; width: 100%;">
-            <thead>
-                <tr>
-                    <th class="border border-black p-4" >Mark & No.s</th>
-                    <th class="border border-black p-2">No. of Pkgs</th>
-                    <th class="border border-black p-2">Length</th>
-                    <th class="border border-black p-2">Breadth</th>
-                    <th class="border border-black p-2">Height</th>
-                    <th class="border border-black p-2">Volume of 1 Unit</th>
-                    <th class="border border-black p-2">Total Volume(Cu.M)</th>
-                </tr>
-            </thead>
-            <tbody class="font-normal ">
-                ${Array.from(document.querySelectorAll('tbody tr'))
-                    .map(row => {
-                        const inputs = row.querySelectorAll('input');
-                        return inputs.length >= 7 ? `
-                            <tr>
-                                ${Array.from(inputs).slice(1).map(input => // Skip first input
-                                    `<td class="border border-black p-4">${input.value || ''}</td>`
-                                ).join('')}
-                            </tr>
-                        ` : '';
-                    }).join('')}
-            </tbody>
-        </table>
-    `;
+function drawSummaryBox(pdf, label, value, x, y) {
+    const boxWidth = 60;
+    const boxHeight = 20;
+
+    // Draw the box
+    pdf.setDrawColor(0);
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(x, y, boxWidth, boxHeight);
+
+    // Set font
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, 'bold');
+
+    const centerX = x + boxWidth / 2;
+
+    // Draw centered text (label and value)
+    pdf.text(label, centerX, y + 7, { align: 'center' });   // label near top
+    pdf.text(value, centerX, y + 15, { align: 'center' });  // value near bottom
 }
+
+
+function getSurveyTableData() {
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+    return rows.map(row => {
+        const inputs = row.querySelectorAll('input');
+        if (inputs.length >= 7) {
+            return Array.from(inputs).slice(1, 8).map(input => input.value || '');
+        }
+        return null;
+    }).filter(row => row !== null);
+}
+
+function loadImageProps(url) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => {
+            resolve(img);
+        };
+        img.onerror = () => {
+            console.warn('Logo image could not be loaded.');
+            resolve(null);
+        };
+        img.src = url;
+    });
+}
+
 
 
 
@@ -894,7 +848,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 totalVolume += totalRowVolume;
                 totalPackages += noOfPkgs;
             });
-
+            
             document.querySelector('input[name="totalVolume"]').value = totalVolume > 0 ? totalVolume.toFixed(3) : '';
             document.querySelector('input[name="totalPkgs"]').value = totalPackages > 0 ? totalPackages : '';
         }
