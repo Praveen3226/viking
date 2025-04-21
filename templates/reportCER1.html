@@ -247,6 +247,8 @@ h1 {
 
                 
 </style>
+
+
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -401,125 +403,225 @@ h1 {
         <!-- Footer -->
 
     <footer class="footer">
-        &copy;  2025 <strong>AYlabs</strong>. Crafted with care, protected with pride.
+        &copy;  2025 <strong>Bitsmart</strong>. Crafted with care, protected with pride.
     </footer>
     </div>
     </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.5.0-beta4/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+<!-- jsPDF Core -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- AutoTable Plugin -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+    const surveyData = {{ survey_data | tojson }};
+</script>
     
 <script>
 
 async function generatePDF() {
-    const { jsPDF } = window.jspdf;
-    
-    // Preserve original document state
-    const originalElement = document.getElementById('invoice');
-    const originalStyles = window.getComputedStyle(originalElement);
-    
-    // Create a clean clone with preserved dimensions
-    const clone = originalElement.cloneNode(true);
-    clone.id = 'pdf-clone';
-    
-    // Set up clone styling for accurate rendering
-    Object.assign(clone.style, {
-        position: 'fixed',
-        left: '0',
-        top: '0',
-        zIndex: '99999',
-        width: '100%',
-        background: 'white',
-        visibility: 'visible',
-        transform: 'translateZ(0)'
-    });
-
-    // Remove interactive elements but keep headers
-    const elementsToRemove = clone.querySelectorAll('.footer, .certificate-btn, button, .sidebar-backdrop, .sidebar');
-    elementsToRemove.forEach(el => el.remove());
-
-    // Add border enforcement styles
-    const borderStyle = document.createElement('style');
-    borderStyle.innerHTML = `
-        /* Force borders for applicant table */
-        .pdf-table, .pdf-table th, .pdf-table td {
-            border: 2px solid #000 !important;
-            border-collapse: collapse !important;
-        }
-        
-        /* Force borders for survey measures boxes */
-        div[style*="border: 1px solid #000"] {
-            border: 2px solid #000 !important;
-        }
-        
-        /* Header table borders */
-        .pdf-tableh {
-            border-top: 2px solid #000 !important;
-            border-bottom: 2px solid #000 !important;
-        }
-        
-        .certificate-title {
-            background-color: #b91c1c !important;
-            -webkit-print-color-adjust: exact;
-        }
-    `;
-    clone.appendChild(borderStyle);
-
-    document.body.appendChild(clone);
-
     try {
-        // Use html2canvas with improved configuration
-        const canvas = await html2canvas(clone, {
-            scale: 3, // Increased scale for better border visibility
-            logging: true,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            scrollX: 0,
-            scrollY: 0,
-            ignoreElements: (element) => {
-                return element.classList.contains('no-print');
-            }
-        });
-
-        // Generate PDF
+        const { jsPDF } = window.jspdf; // Pull from window
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'mm',
-            format: 'a4',
-            compress: true
+            format: 'a4'
         });
 
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const imgRatio = pageWidth / (canvas.width / canvas.height);
+        const marginLeft = 15;
+        let cursorY = 2;
 
-        let heightLeft = imgRatio;
-        let position = 0;
 
-        // Handle multi-page content
-        while (heightLeft > 0) {
-            pdf.addImage(canvas, 'PNG', 0, position, pageWidth, imgRatio);
-            heightLeft -= pageHeight;
-            position -= pageHeight;
-            
-            if (heightLeft > 0) {
-                pdf.addPage();
-            }
-        }
+// Load the full header image
+const headerUrl = '/static/logo2.png';  // your custom header image
+const headerImage = await loadImageProps(headerUrl);
 
-        // Save PDF
-        const certNo = "{{ cer.CertificateNumber }}";
+if (headerImage) {
+    const headerX = 10;      // Left margin
+    const headerY = cursorY; // Top position
+    const headerWidth = 180; // Almost full width of A4 (210mm - margins)
+    const headerHeight = 45; // Adjust based on your image
+
+    // Add image
+    pdf.addImage(headerImage, 'PNG', headerX, headerY, headerWidth, headerHeight);
+
+    // Move cursorY below the image
+    cursorY += headerHeight + 5;
+} else {
+    alert('Header image could not be loaded.');
+}
+
+
+        // Certificate number and date
+    const certNo = "{{ cer.CertificateNumber }}";
+    const certDate = "{{ cer.date }}";
+     // Define box dimensions
+const lineSpacing = 4;
+const boxTop = cursorY - lineSpacing;
+const boxBottom = cursorY + lineSpacing;
+const boxLeft = marginLeft - 1;
+const boxRight = 215 - marginLeft + 1;
+
+// Draw top and bottom borders (box lines)
+pdf.setDrawColor(0); // black
+pdf.setLineWidth(0.2);
+pdf.line(boxLeft, boxTop, boxRight, boxTop);     // Top border
+pdf.line(boxLeft, boxBottom, boxRight, boxBottom); // Bottom border
+
+// Calculate vertical center for text
+const textY = (boxTop + boxBottom) / 2 + 1.5; // Adjusted slightly for visual centering
+
+// Set font size for certificate number and date
+pdf.setFontSize(11); // Adjust this value to your desired font size
+
+// Text placement
+const centerX = 105; // center of A4 (210mm / 2)
+const leftTextX = marginLeft;
+const rightTextX = 210 - marginLeft;
+
+// Draw text
+pdf.text(`Certificate No.: ${certNo}`, leftTextX, textY);
+pdf.text(`Date: ${certDate}`, rightTextX, textY, { align: 'right' });
+
+// Move cursor below box for next section
+cursorY = boxBottom + 4;
+
+        // Certificate title
+        pdf.setFillColor(185, 28, 28);
+        pdf.rect(marginLeft, cursorY, 180, 10, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(11);
+        pdf.text('CERTIFICATE OF MEASUREMENT', 105, cursorY + 7, { align: 'center' });
+        cursorY += 15;
+
+        // Applicant info table
+        pdf.setTextColor(0, 0, 0);
+        pdf.autoTable({
+            startY: cursorY,
+            body: [
+                ['Name of Applicant', "{{ cer.applicant_name }}"],
+                ['Shipper', "{{ cer.shipper }}"],
+                ['Consignee', "{{ cer.consignee }}"],
+                ['Commodity', "{{ cer.commodity }}"],
+                ['Port of Discharge', "{{ cer.port_of_discharge }}"],
+                ['S.B. No./ Invoice No.', "{{ cer.sb_number }}"],
+                ['C & F Agent', "{{ cer.cf_agent }}"],
+                ['Type Of Packing', "{{ cer.total_pkgs }}"]
+            ],
+            theme: 'grid',
+            margin: { left: marginLeft },
+            styles: { fontSize: 10, cellPadding: 2, valign: 'middle', lineWidth: 0.1, lineColor: [0, 0, 0]},
+            headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0] },
+            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 }, 1: { cellWidth: 'auto' } }
+        });
+        cursorY = pdf.lastAutoTable.finalY + 8;
+
+// Survey Measures Table
+pdf.setFont("helvetica", "bold");
+pdf.text('SURVEY MEASURES', marginLeft, cursorY);
+cursorY += 5; // Add some space below the title
+
+// Use the surveyData variable
+const surveyTableData = surveyData.map(survey => [
+    survey.marks_no,
+    survey.no_of_pkgs,
+    survey.length,
+    survey.breadth,
+    survey.height,
+    survey.volumePerUnit,
+    survey.volume_unit
+]);
+
+// Generate the table
+pdf.autoTable({
+    startY: cursorY,
+    head: [['Mark & Nos', 'No. of Pkgs', 'Length', 'Breadth', 'Height', 'Volume of 1 Unit', 'Total Volume(Cu.M)']],
+    body: surveyTableData,
+    theme: 'grid',
+    margin: { left: marginLeft },
+    styles: { fontSize: 9, halign: 'center', cellPadding: 1, valign: 'middle', lineWidth: 0.1, lineColor: [0, 0, 0] },
+    headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' }
+});
+
+// Get the height of the table and adjust cursorY for the next content
+cursorY = pdf.lastAutoTable.finalY + 5; // Add some space after the table
+
+                // Total boxes
+        const totalPkgs = "{{ cer.total_pkgs }}";
+        const grossWeight = "{{ cer.gross_weight }}";
+        const totalVolume = "{{ cer.total_volume }}";
+
+const boxHeight = 20;
+const boxWidth = 60;
+const boxSpacing = 4; // Reduced spacing
+
+pdf.setDrawColor(0);
+pdf.setLineWidth(0.2);
+
+// Box positions with reduced spacing
+const box1X = marginLeft - 1;
+const box2X = marginLeft + boxWidth + boxSpacing;
+const box3X = marginLeft + 2 * (boxWidth + boxSpacing);
+
+// Draw rectangles
+pdf.rect(box1X, cursorY, boxWidth, boxHeight);
+pdf.rect(box2X, cursorY, boxWidth, boxHeight);
+pdf.rect(box3X, cursorY, boxWidth, boxHeight);
+
+// Centered text helper
+function centerTextInBox(text, x, y, width, height) {
+    const textWidth = pdf.getTextWidth(text);
+    const textX = x + (width - textWidth) / 2;
+    const textY = y + height / 2 ; // Adjust as needed
+    pdf.text(text, textX, textY);
+}
+
+// Set font
+pdf.setFontSize(9);
+
+// Add text to boxes (label and value centered in two halves)
+centerTextInBox('Total No. of Pkgs:', box1X, cursorY, boxWidth, boxHeight / 2);
+centerTextInBox(totalPkgs, box1X, cursorY + boxHeight / 2, boxWidth, boxHeight / 2);
+
+centerTextInBox('Gross Wt In Kgs. (As Declared):', box2X, cursorY, boxWidth, boxHeight / 2);
+centerTextInBox(grossWeight, box2X, cursorY + boxHeight / 2, boxWidth, boxHeight / 2);
+
+centerTextInBox('Total Volume (Cu. M):', box3X, cursorY, boxWidth, boxHeight / 2);
+centerTextInBox(totalVolume, box3X, cursorY + boxHeight / 2, boxWidth, boxHeight / 2);
+
+
+        cursorY += boxHeight + 10;
+
+        // Issued without prejudice text
+        pdf.setFontSize(10);
+        pdf.setFont(undefined, 'bold');
+        pdf.text('"ISSUED WITHOUT PREJUDICE"', marginLeft, cursorY);
+
+        pdf.setFont(undefined, 'bold');
+        pdf.text('For Viking Marine Inc.', 195 - marginLeft, cursorY, { align: 'right' });
+        pdf.text('Authorised Signatory', 195 - marginLeft, cursorY + 15, { align: 'right' });
+
+
         pdf.save(`Certificate_${certNo}.pdf`);
 
     } catch (error) {
-        console.error("PDF generation failed:", error);
-        alert('PDF generation failed. Please check the console for details.');
-    } finally {
-        // Clean up
-        clone.remove();
+        console.error('PDF generation failed:', error);
+        alert('Error generating PDF: ' + error.message);
     }
 }
+
+async function loadImageProps(url) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = url;
+    });
+}
+
 
 
 // Toggle sidebar
@@ -560,5 +662,6 @@ document.querySelectorAll('.sidebar a').forEach(link => {
 
 
     </script>
+    
 </body>
 </html>
