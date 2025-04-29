@@ -703,7 +703,7 @@ button[onclick="exportToExcel()"]:hover {
            
         </div>
 
-        <div class="pagination-controls">
+        {% comment %} <div class="pagination-controls">
             <div class="entries-control">
                 <span>Show:</span>
                 <select id="entriesPerPage">
@@ -717,7 +717,7 @@ button[onclick="exportToExcel()"]:hover {
                 <button id="prevPage" onclick="previousPage()">Previous</button>
                 <button id="nextPage" onclick="nextPage()">Next</button>
             </div>
-        </div>
+        </div> {% endcomment %}
         <div id="noResults">No matching records found</div>
         
 
@@ -729,7 +729,7 @@ button[onclick="exportToExcel()"]:hover {
     <script>
   
  // Pagination variables
- let currentPage = 1;
+ /* let currentPage = 1;
     let entriesPerPage = parseInt(document.getElementById('entriesPerPage').value);
     let allRows = Array.from(document.querySelectorAll('table tbody tr'));
     let filteredRows = [...allRows];
@@ -758,7 +758,7 @@ button[onclick="exportToExcel()"]:hover {
         // Show/hide no results message
         document.getElementById('noResults').style.display = 
             filteredRows.length === 0 ? 'block' : 'none';
-    }
+    } */
 
     function filterTable() {
         const searchInput = document.getElementById("searchInput").value.toLowerCase();
