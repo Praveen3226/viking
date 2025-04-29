@@ -724,6 +724,21 @@ button[onclick="exportToExcel()"]:hover {
            
         </div>
 
+                        <div class="pagination-controls">
+            <div class="entries-control">
+                <span>Show:</span>
+                <select id="entriesPerPage">
+                    <option value="50" selected>50</option>
+                    <option value="100">100</option>
+                </select>
+                <span>entries</span>
+            </div>
+            <div class="page-info" id="pageInfo"></div>
+            <div class="pagination-buttons">
+                <button id="prevPage" onclick="previousPage()">Previous</button>
+                <button id="nextPage" onclick="nextPage()">Next</button>
+            </div>
+        </div>
      
               <!-- No results message -->
 <p id="noResults" style="display: none; color: red; text-align: center; margin-top: 10px;">
