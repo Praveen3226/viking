@@ -580,6 +580,13 @@ button[onclick="exportToExcel()"]:hover {
 .nav-links a:hover {
     color: #007bff;
 }
+
+#noResults {
+    display: none;
+    color: red;
+    text-align: center;
+    margin-top: 10px;
+}
     </style>
 </head>
 <body>
@@ -732,7 +739,10 @@ button[onclick="exportToExcel()"]:hover {
                 <button id="nextPage" onclick="nextPage()">Next</button>
             </div>
         </div>
-        <div id="noResults">No matching records found</div>
+              <!-- No results message -->
+<p id="noResults" style="display: none; color: red; text-align: center; margin-top: 10px;">
+    No data found for selected filters.
+</p>
         
 
     </div>
