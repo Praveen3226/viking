@@ -1002,43 +1002,32 @@ async function generateFCLReportPDF() {
 
             ensureSpace(30 + consignmentData.length * 10);
 
-const marginTop = margin; // Your predefined margin
-const headerHeight = 40;
-const headerWidth = 180;
-
-pdf.autoTable({
-    head: [[
-        'Consignor',
-        'Consignee',
-        'Description',
-        'Marks & Nos.',
-        'Package Count',
-        'Gross Weight (Kgs)',
-        'Volume'
-    ]],
-    body: consignmentData,
-    theme: 'grid',
-    styles: {
-        fontSize: 9,
-        lineWidth: 0.5,
-        lineColor: [0, 0, 0],
-        cellPadding: 2
-    },
-    headStyles: {
-        fillColor: [255, 255, 255],
-        textColor: 0,
-        fontStyle: 'bold'
-    },
-    margin: { top: marginTop, left: margin, right: margin }, // top margin ensures header space is reserved
-    didDrawPage: function (data) {
-        // Always draw the header at the fixed top position
-        const headerX = (pdf.internal.pageSize.getWidth() - headerWidth) / 2;
-        const headerY = marginTop;
-        
-        // Replace this with your actual header drawing logic
-        createHeader(headerX, headerY, headerWidth, headerHeight);
-    }
-});
+            pdf.autoTable({
+                startY: yPos,
+                head: [[
+                    'Consignor',
+                    'Consignee',
+                    'Description',
+                    'Marks & Nos.',
+                    'Package Count',
+                    'Gross Weight (Kgs)',
+                    'Volume'
+                ]],
+                body: consignmentData,
+                theme: 'grid',
+                styles: {
+                    fontSize: 9,
+                    lineWidth: 0.5,
+                    lineColor: [0, 0, 0],
+                    cellPadding: 2
+                },
+                headStyles: {
+                    fillColor: [255, 255, 255],
+                    textColor: 0,
+                    fontStyle: 'bold'
+                },
+                margin: { left: margin, right: margin }
+            });
 
 
 
