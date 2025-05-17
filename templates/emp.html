@@ -10,10 +10,11 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
 
     <link href="https://fonts.cdnfonts.com/css/cooper-black" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <style> 
 /* @import url('https://fonts.cdnfonts.com/css/cooper-black'); 
 h1 {
@@ -866,326 +867,218 @@ input[type="text"],
         &copy;  2025 <strong>AYlabs</strong>. Crafted with care, protected with pride.
     </footer>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
 
     <script>
+   
 
-function generateFCLReportPDF() {
+        function getValue(id) {
+    const el = document.getElementById(id);
+    if (!el) {
+        console.warn(`Element with ID "${id}" not found.`);
+        return 'N/A';
+    }
+
+    return el.value || el.textContent || 'N/A';
+}
+async function generateFCLReportPDF() {
     try {
-        // Create hidden containers for PDF content (two pages)
-        const pdfContainer1 = document.createElement('div');
-        pdfContainer1.style.position = 'fixed';
-        pdfContainer1.style.left = '-9999px';
-        pdfContainer1.style.width = '794px'; // A4 width
-        pdfContainer1.style.padding = '20px';
-        document.body.appendChild(pdfContainer1);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-        const pdfContainer2 = document.createElement('div');
-        pdfContainer2.style.position = 'fixed';
-        pdfContainer2.style.left = '-9999px';
-        pdfContainer2.style.width = '794px';
-        pdfContainer2.style.padding = '20px';
-        document.body.appendChild(pdfContainer2);
+        const margin = 15;
+        const pageHeight = doc.internal.pageSize.height;
+        let yPos = 2;
 
-        // Safe value getter with fallback
-        const getValue = (id) => {
-            const element = document.getElementById(id);
-            return element && element.value ? element.value.trim() : 'N/A';
+        // Helper to load image
+        async function loadImageProps(url) {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        // Load and draw header image
+        const headerUrl = '/static/logo2.png';
+        const headerImage = await loadImageProps(headerUrl);
+
+        if (headerImage) {
+            doc.addImage(headerImage, 'PNG', 10, yPos, 180, 45);
+            yPos += 50;
+        } else {
+            alert('Header image could not be loaded.');
+        }
+
+        // Header generator for new pages
+        const createHeader = (doc) => {
+            let y = margin;
+
+            if (headerImage) {
+                doc.addImage(headerImage, 'PNG', margin, y, 40, 20);
+            }
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const textStartX = headerImage ? margin + 45 : margin;
+
+            doc.setFontSize(10);
+            doc.setLineWidth(0.5);
+            doc.setDrawColor(0, 0, 0);
+
+            y += 22;
+            doc.line(margin, y, pageWidth - margin, y);
+            y += 4;
+
+            doc.text(`Report No.: ${getValue('CertificateNumber')}`, textStartX, y);
+            doc.text(`Date: ${new Date(getValue('date')).toLocaleDateString('en-GB')}`, pageWidth - margin, y, { align: 'right' });
+
+            y += 3.5;
+            doc.line(margin, y, pageWidth - margin, y);
+            y += 4;
+
+            doc.setFillColor(185, 28, 28);
+            doc.rect(margin, y, pageWidth - margin * 2, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(14);
+            doc.text("STUFFING SURVEY REPORT", pageWidth / 2, y + 7, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
+
+            return y + 15;
         };
 
-        // Get applicant name components safely
-        const applicantTitle = document.getElementById('applicantTitle')?.value || '';
-        const applicantNameInput = document.getElementById('applicantNameInput')?.value || '';
-        const applicantName = `${applicantTitle} ${applicantNameInput}`.trim();
+        yPos = createHeader(doc);
 
-        // Build consignment details table rows
-        let consignmentRows = '';
-        const mainTableRows = document.querySelectorAll('#main-table tbody tr');
-        mainTableRows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            if (cells.length >= 8) {
-                consignmentRows += `
-                    <tr>
-                        <td style="border: 1px solid #000; padding: 8px;">${cells[1]?.textContent || 'N/A'}</td>
-                        <td style="border: 1px solid #000; padding: 8px;">${cells[2]?.textContent || 'N/A'}</td>
-                        <td style="border: 1px solid #000; padding: 8px;">${cells[3]?.textContent || 'N/A'}</td>
-                        <td style="border: 1px solid #000; padding: 8px;">${cells[4]?.textContent || 'N/A'}</td>
-                        <td style="border: 1px solid #000; padding: 8px;">${cells[5]?.textContent || 'N/A'}</td>
-                        <td style="border: 1px solid #000; padding: 8px;">${cells[6]?.textContent || 'N/A'}</td>
-                        <td style="border: 1px solid #000; padding: 8px;">${cells[7]?.textContent || 'N/A'}</td>
-                    </tr>
-                `;
+        const ensureSpace = (heightNeeded) => {
+            if (yPos + heightNeeded > pageHeight - margin) {
+                doc.addPage();
+                yPos = createHeader(doc);
             }
+        };
+
+        // Table 1: Basic Info
+        ensureSpace(60);
+        doc.autoTable({
+            startY: yPos,
+            theme: 'grid',
+            styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0, 0, 0] },
+            headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' },
+            body: [
+                ['Applicant for Survey', `${getValue('applicantTitle')} ${getValue('applicantNameInput')}`, 'Container No.', getValue('containerNumber')],
+                ['Size/Type', getValue('sizeType'), 'Stuffing Completion Date', getValue('stuffingCompDateTime')],
+                ['Tare Weight (Kgs)', getValue('tareWeight'), 'Seal Number', getValue('sealNumber')],
+                ['Payload Capacity (Kgs)', getValue('payloadCapacity'), 'Seal Date & Time', getValue('sealDateTime')],
+                ['Port of Discharge', getValue('portOfDischarge'), 'Place of Inspection', getValue('placeOfStuffing')]
+            ],
+            columnStyles: {
+                0: { cellWidth: 45, fontStyle: 'bold' },
+                1: { cellWidth: 45 },
+                2: { cellWidth: 45, fontStyle: 'bold' },
+                3: { cellWidth: 45 }
+            },
+            margin: { left: margin, right: margin }
         });
 
-        // Build summary boxes HTML dont remove this
-        const summaryBoxesHTML = `
-        `;
+        yPos = doc.lastAutoTable.finalY + 10;
 
-        // Generate header HTML
-        const generateHeader = () => `
-            <div class="header" style="display: flex; align-items: center; text-align: center;">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" 
-                    style="height: 120px; margin-right: 72px; margin-top: 10px;">
-                <div style="text-align: center; flex-grow: 1; margin-left: -100px;">
-                    <h1 style="font-family: 'Cooper Black', sans-serif; font-size: 28px; margin: 0;">
-                        VIKING MARINE INC.
-                    </h1>
-                    <div style="margin-top: 3px; line-height: 1.2;">
-                        <p style="margin: 0; font-weight: bold;">SURVEYORS AND CONSULTING ENGINEERS</p>
-                        <p style="margin: 0;"># 143,Dinnur Village, Opp. India SATCOM, Kadugodi Post Bangalore - 560067.</p>
-                        <p style="margin: 0;">Ph.: +919036015240, +919035015240 &amp; +919036015243</p>
-                        <p style="margin: 0;">E-mail : ops@vikingmarine.in, Website : www.vikingmarine.in</p>
-                    </div>
-                </div>
-            </div>
-            <br>
-            <table class="pdf-tableh">
-                <tr>
-                    <td><strong>Report No.:</strong> ${getValue('CertificateNumber')}</td>
-                    <td><strong>Date:</strong> ${new Date(getValue('date')).toLocaleDateString('en-GB') || ''}</td>
-                </tr>
-            </table>
-        `;
+        // Consignment Table
+        const consignmentData = Array.from(document.querySelectorAll('#main-table tbody tr'))
+            .map(row => Array.from(row.querySelectorAll('td'))
+                .slice(1, 8)
+                .map(cell => cell?.textContent?.trim() || 'N/A'));
 
-        // Shared styles for both pages
-        const allStyles = `
-            <style>
-                .certificate-title {
-                    text-align: center;
-                    background-color: #b91c1c;
-                    color: white;
-                    padding: 10px;
-                    font-size: 16px;
-                    font-weight: bold;
-                    margin-top: 10px;
-                }
-                .pdf-table {
-                    width: 100%; 
-                    border-collapse: collapse; 
-                    margin: 15px 0;
-                }
-                .pdf-table td, .pdf-table th {
-                    border: 1px solid #000;
-                    padding: 8px;
-                    text-align: center;
-                }
-.pdf-tableh {
-  width: 100%;
-  border-collapse: collapse;
-  border-top: 2px solid black;
-  border-bottom: 2px solid black;
-  text-align: left;
-}
+        ensureSpace(70 + consignmentData.length * 10);
+        doc.autoTable({
+            startY: yPos,
+            head: [['Consignor', 'Consignee', 'Description', 'Marks & Nos.', 'Package Count', 'Gross Weight (Kgs)', 'Volume']],
+            body: consignmentData,
+            theme: 'grid',
+            styles: { fontSize: 9, lineWidth: 0.5, lineColor: [0, 0, 0] },
+            headStyles: { fillColor: [255, 255, 255], textColor: 0 }
+        });
 
-.pdf-tableh th,
-.pdf-tableh td {
-  border: none;
-  padding: 6px;
-  box-sizing: border-box;
-  white-space: nowrap;
-}
+        yPos = doc.lastAutoTable.finalY + 10;
 
-.pdf-tableh td:last-child {
-  text-align: right;
-}
-                @media print {
-                    .header {
-                        position: fixed;
-                        top: 0;
-                        background: white;
-                        padding-bottom: 10px;
-                    }
-                    .pdf-tableh {
-                        margin-top: 150px;
-                    }
-                }
-            </style>
-        `;
+        // Page break
+        doc.addPage();
+        yPos = createHeader(doc);
 
-        // Page 1 Content (up to summary boxes)
-        pdfContainer1.innerHTML = `
-            ${allStyles}
-            ${generateHeader()}
-            <h2 class="certificate-title">STUFFING SURVEY REPORT </h2>
-            <table class="pdf-table">
-                <tbody>
-                    <tr>
-                        <th>Applicant for Survey</th>
-                        <td colspan="3">${applicantName}</td>
-                    </tr>
-                    <tr>
-                        <th>Container No.</th>
-                        <td>${getValue('containerNumber')}</td>
-                        <th>Stuffing Comm. Date and Time</th>
-                        <td>${getValue('stuffingCommDateTime')}</td>
-                    </tr>
-                    <tr>
-                        <th>Size/Type</th>
-                        <td>${getValue('sizeType')}</td>
-                        <th>Stuffing Completion Date and Time</th>
-                        <td>${getValue('stuffingCompDateTime')}</td>
-                    </tr>
-                    <tr>
-                        <th>Tare Weight (Kgs)</th>
-                        <td>${getValue('tareWeight')} </td>
-                        <th>Seal Number</th>
-                        <td>${getValue('sealNumber')}</td>
-                    </tr>
-                    <tr>
-                        <th>Payload Capacity (Kgs)</th>
-                        <td>${getValue('payloadCapacity')}</td>
-                        <th>Seal Date & Time</th>
-                        <td>${getValue('sealDateTime')}</td>
-                    </tr>
-                    <tr>
-                        <th>Port of Discharge</th>
-                        <td>${ getValue('portOfDischarge')}</td>
-                        <th>Place of Inspection</th>
-                        <td>${getValue('placeOfStuffing')}</td>
-                    </tr>
-                </tbody>
-            </table>
-            <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">Details of Consignment: (As declared)</h3>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                <thead>
-                    <tr>
-                        <th style="border: 1px solid #000; padding: 8px;">Consignor</th>
-                        <th style="border: 1px solid #000; padding: 8px;">Consignee</th>
-                        <th style="border: 1px solid #000; padding: 8px;">Description</th>
-                        <th style="border: 1px solid #000; padding: 8px;">Marks & Nos.</th>
-                        <th style="border: 1px solid #000; padding: 8px;">Package Count</th>
-                        <th style="border: 1px solid #000; padding: 8px;">Gross Weight (Kgs)</th>
-                        <th style="border: 1px solid #000; padding: 8px;">Volume</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${consignmentRows || '<tr><td colspan="7">No consignment data available</td></tr>'}
-                </tbody>
-            </table>
-            ${summaryBoxesHTML}
-        `;
+        // Summary Boxes
+        const boxWidth = (doc.internal.pageSize.getWidth() - margin * 2 - 15) / 4;
+        const boxHeight = 25;
+        const summaryData = [
+            { id: 'volume', label: 'Total Volume', unit: 'CBM' },
+            { id: 'totalPackages', label: 'Total Packages', unit: 'Pkgs' },
+            { id: 'grossWeight', label: 'Total Gross Weight', unit: 'Kgs' },
+            { id: 'TotalContainerWeight', label: 'Total Container Weight', unit: 'Kgs' }
+        ];
 
-        // Page 2 Content (remarks and surveyor details)
-        pdfContainer2.innerHTML = `
-    <div class="header" style="display: flex; align-items: center; text-align: center; padding-bottom: 10px;">
-        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" 
-            style="height: 120px; margin-right: 50px; margin-top: 10px;">
-        <div style="text-align: center; flex-grow: 1; margin-left: -100px;">
-            <h1 style="font-family: 'Cooper Black', sans-serif; font-size: 28px; margin: 0;">
-                VIKING MARINE INC.
-            </h1>
-            <div style="margin-top: 3px; line-height: 1.2;">
-                <p style="margin: 0; font-weight: bold;">SURVEYORS AND CONSULTING ENGINEERS</p>
-                <p style="margin: 0;"># 143, Dinnur Village, Opp. India SATCOM, Kadugodi Post Bangalore - 560067.</p>
-                <p style="margin: 0;">Ph.: +919036015240, +919035015240 &amp; +919036015243</p>
-                <p style="margin: 0;">E-mail : ops@vikingmarine.in, Website : www.vikingmarine.in</p>
-            </div>
-        </div>
-    </div>
-    <table class="pdf-tableh" style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-        <tr>
-            <td><strong>Report No.:</strong> ${getValue('CertificateNumber')}</td>
-            <td><strong>Date:</strong> ${new Date(getValue('date')).toLocaleDateString('en-GB') || ''}</td>
-        </tr>
-    </table>
-    
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 20px;">
-        ${['volume', 'totalPackages', 'grossWeight','TotalContainerWeight'].map(id => {
-            const value = getValue(id);
-            const labels = {
-                volume: { title: 'Total Volume', unit: 'CBM' },
-                totalPackages: { title: 'Total Packages', unit: 'Pkgs' },
-                grossWeight: { title: 'Total Gross Wt. In Kgs (As Declared)', unit: 'Kgs' },
-                TotalContainerWeight : { title: 'Total Wt. of the container ', unit: 'Kgs' }
-            };
-            return `
-                <div style="border: 1px solid #000; padding: 15px; text-align: center;">
-                    <h3 style="font-weight: bold; margin-bottom: 5px;">${labels[id].title}</h3>
-                    <p style="font-size: 18px; font-weight: bold;">
-                        ${value} ${labels[id].unit}
-                    </p>
-                </div>
-            `;
-        }).join('')}
-    </div>
-    
-    <br>
+        summaryData.forEach((item, index) => {
+            const xPos = margin + index * (boxWidth + 5);
+            const value = getValue(item.id);
+            doc.setDrawColor(0, 0, 0);
+            doc.setFillColor(255, 255, 255);
+            doc.rect(xPos, yPos, boxWidth, boxHeight, 'FD');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text(item.label, xPos + boxWidth / 2, yPos + 9, { align: 'center' });
+            doc.setFontSize(12);
+            doc.text(`${value} ${item.unit}`, xPos + boxWidth / 2, yPos + 19, { align: 'center' });
+        });
 
-    ${allStyles}
-    <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">Remarks</h3>
-    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-        ${Object.entries({
-            'Loading Condition': getValue('loadingCondition'),
-            'Lashing': getValue('lashing'),
-            'Others': getValue('others')
-        }).map(([key, value]) => `
-            <tr>
-                <td style="border: 1px solid #000; padding: 8px; font-weight: bold; width: 30%;">${key}</td>
-                <td style="border: 1px solid #000; padding: 8px; width: 70%;">${value}</td>
-            </tr>
-        `).join('')}
-    </table>
-    <div class="mt-8 w-full">
-        <div style="text-align: left;">
-            
-            <p style="margin-top: 5px;">Surveyor: ${getValue('surveyorName')}</p><br><br>
-            <p class="text-sm text-left font-bold" style="text-transform: uppercase;">
-                "ISSUED WITHOUT PREJUDICE"
-            </p>
-        </div>
-        <br>
-        <div style="text-align: right;">
-            <p class="font-semibold">
-                For Viking Marine Inc.<br><BR><BR>
-                Authorised Signatory
-            </p>
-        </div>
-    </div>
-</div>
+        yPos += boxHeight + 10;
 
-        `;
+        // Remarks Table
+        ensureSpace(40);
+        doc.autoTable({
+            startY: yPos,
+            body: [
+                ['Loading Condition', getValue('loadingCondition')],
+                ['Lashing', getValue('lashing')],
+                ['Others', getValue('others')]
+            ],
+            theme: 'grid',
+            styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0, 0, 0] },
+            columnStyles: {
+                0: { fontStyle: 'bold', cellWidth: 40 },
+                1: { cellWidth: 60 }
+            },
+            margin: { left: margin, right: margin }
+        });
 
-        // Generate PDF
-        const pdfOptions = { 
-            scale: 2,
-            useCORS: true,
-            logging: true
-        };
+        yPos = doc.lastAutoTable.finalY + 20;
 
-        html2canvas(pdfContainer1, pdfOptions).then(canvas1 => {
-    html2canvas(pdfContainer2, pdfOptions).then(canvas2 => {
-        const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const borderMargin = 5;  // Border margin from page edges
+        doc.setFontSize(12);
+        doc.text(`Surveyor: ${getValue('surveyorName')}`, margin, yPos);
+        doc.text('"ISSUED WITHOUT PREJUDICE"', margin, yPos + 8);
+        const rightX = doc.internal.pageSize.getWidth() - margin;
+        doc.text('For Viking Marine Inc.', rightX, yPos, { align: 'right' });
+        doc.text('Authorised Signatory', rightX, yPos + 8, { align: 'right' });
 
-        // Add first page with border
-        const imgHeight1 = (canvas1.height * pageWidth) / canvas1.width;
-        pdf.addImage(canvas1, 'PNG', 0, 0, pageWidth, imgHeight1);
-        pdf.rect(borderMargin, borderMargin, pageWidth - 2 * borderMargin, pageHeight - 2 * borderMargin);
-
-        // Add second page with border
-        pdf.addPage();
-        const imgHeight2 = (canvas2.height * pageWidth) / canvas2.width;
-        pdf.addImage(canvas2, 'PNG', 0, 0, pageWidth, imgHeight2);
-        pdf.rect(borderMargin, borderMargin, pageWidth - 2 * borderMargin, pageHeight - 2 * borderMargin);
-
-        pdf.save('FCL_Report.pdf');
-        document.body.removeChild(pdfContainer1);
-        document.body.removeChild(pdfContainer2);
-    });
-}).catch(error => {
-    console.error('Error generating PDF:', error);
-    alert('Error generating PDF. Please check the console for details.');
-});
+        doc.save('FCL_Report.pdf');
     } catch (error) {
-        console.error('Error generating PDF:', error);
-        alert('Error generating PDF. Please check the console for details.');
+        console.error('PDF Generation Error:', error);
+        alert(`PDF Generation Failed: ${error.message}`);
     }
 }
+
+
+// Event listener setup
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('generatePdfButton').addEventListener('click', (e) => {
+        e.preventDefault();
+        generateFCLReportPDF();
+    });
+});
+
+
+
+
     document.addEventListener("DOMContentLoaded", function() {
         function updateApplicantName() {
             const title = document.getElementById("applicantTitle").value;
