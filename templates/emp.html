@@ -919,7 +919,7 @@ async function generateFCLReportPDF() {
                     }
 
                     const pageWidth = pdf.internal.pageSize.getWidth();
-                    const textStartX = headerImage ? margin + 5 : margin;
+                    const textStartX = headerImage ? margin + 0 : margin;
 
                     pdf.setFontSize(10);
                     pdf.setLineWidth(0.5);
@@ -960,45 +960,76 @@ async function generateFCLReportPDF() {
         };
 
         // Table 1: Basic Info
-        ensureSpace(60);
-        pdf.autoTable({
-            startY: yPos,
-            theme: 'grid',
-            styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0, 0, 0] },
-            headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' },
-            body: [
-                ['Applicant for Survey', `${getValue('applicantTitle')} ${getValue('applicantNameInput')}`, 'Container No.', getValue('containerNumber')],
-                ['Size/Type', getValue('sizeType'), 'Stuffing Completion Date', getValue('stuffingCompDateTime')],
-                ['Tare Weight (Kgs)', getValue('tareWeight'), 'Seal Number', getValue('sealNumber')],
-                ['Payload Capacity (Kgs)', getValue('payloadCapacity'), 'Seal Date & Time', getValue('sealDateTime')],
-                ['Port of Discharge', getValue('portOfDischarge'), 'Place of Inspection', getValue('placeOfStuffing')]
-            ],
-            columnStyles: {
-                0: { cellWidth: 45, fontStyle: 'bold' },
-                1: { cellWidth: 45 },
-                2: { cellWidth: 45, fontStyle: 'bold' },
-                3: { cellWidth: 45 }
-            },
-            margin: { left: margin, right: margin }
-        });
+       // Table 1: Basic Info
+            ensureSpace(60);
+            pdf.autoTable({
+                startY: yPos,
+                theme: 'grid',
+                styles: {
+                    fontSize: 10,
+                    lineWidth: 0.5,
+                    lineColor: [0, 0, 0],
+                    cellPadding: 2
+                },
+                headStyles: {
+                    fillColor: [255, 255, 255],
+                    textColor: 0,
+                    fontStyle: 'bold'
+                },
+                body: [
+                    ['Applicant for Survey', `${getValue('applicantTitle')} ${getValue('applicantNameInput')}`, 'Container No.', getValue('containerNumber')],
+                    ['Size/Type', getValue('sizeType'), 'Stuffing Completion Date', getValue('stuffingCompDateTime')],
+                    ['Tare Weight (Kgs)', getValue('tareWeight'), 'Seal Number', getValue('sealNumber')],
+                    ['Payload Capacity (Kgs)', getValue('payloadCapacity'), 'Seal Date & Time', getValue('sealDateTime')],
+                    ['Port of Discharge', getValue('portOfDischarge'), 'Place of Inspection', getValue('placeOfStuffing')]
+                ],
+                columnStyles: {
+                    0: { cellWidth: 45, fontStyle: 'bold' },
+                    1: { cellWidth: 45 },
+                    2: { cellWidth: 45, fontStyle: 'bold' },
+                    3: { cellWidth: 45 }
+                },
+                margin: { left: margin, right: margin }
+            });
 
-        yPos = pdf.lastAutoTable.finalY + 10;
+            yPos = pdf.lastAutoTable.finalY + 10;
 
-        // Consignment Table
-        const consignmentData = Array.from(document.querySelectorAll('#main-table tbody tr'))
-            .map(row => Array.from(row.querySelectorAll('td'))
-                .slice(1, 8)
-                .map(cell => cell?.textContent?.trim() || 'N/A'));
+            // Table 2: Consignment Table
+            const consignmentData = Array.from(document.querySelectorAll('#main-table tbody tr'))
+                .map(row => Array.from(row.querySelectorAll('td'))
+                    .slice(1, 8)
+                    .map(cell => cell?.textContent?.trim() || 'N/A'));
 
-        ensureSpace(70 + consignmentData.length * 10);
-        pdf.autoTable({
-            startY: yPos,
-            head: [['Consignor', 'Consignee', 'Description', 'Marks & Nos.', 'Package Count', 'Gross Weight (Kgs)', 'Volume']],
-            body: consignmentData,
-            theme: 'grid',
-            styles: { fontSize: 9, lineWidth: 0.5, lineColor: [0, 0, 0] },
-            headStyles: { fillColor: [255, 255, 255], textColor: 0 }
-        });
+            ensureSpace(30 + consignmentData.length * 10);
+
+            pdf.autoTable({
+                startY: yPos,
+                head: [[
+                    'Consignor',
+                    'Consignee',
+                    'Description',
+                    'Marks & Nos.',
+                    'Package Count',
+                    'Gross Weight (Kgs)',
+                    'Volume'
+                ]],
+                body: consignmentData,
+                theme: 'grid',
+                styles: {
+                    fontSize: 9,
+                    lineWidth: 0.5,
+                    lineColor: [0, 0, 0],
+                    cellPadding: 2
+                },
+                headStyles: {
+                    fillColor: [255, 255, 255],
+                    textColor: 0,
+                    fontStyle: 'bold'
+                },
+                margin: { left: margin, right: margin }
+            });
+
+
 
         yPos = pdf.lastAutoTable.finalY + 10;
 
