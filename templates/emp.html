@@ -888,13 +888,13 @@ input[type="text"],
 async function generateFCLReportPDF() {
     try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-        const margin = 15;
-        const pageHeight = doc.internal.pageSize.height;
-        let yPos = 2;
+        const margin = 10;
+        const pageHeight = pdf.internal.pageSize.height;
+        let cursorY = 2;
 
-        // Helper to load image
+        // Helper to load image and return base64
         async function loadImageProps(url) {
             const response = await fetch(url);
             const blob = await response.blob();
@@ -904,66 +904,64 @@ async function generateFCLReportPDF() {
                 reader.readAsDataURL(blob);
             });
         }
+            const headerUrl = '/static/logo2.png';
+            const headerImage = await loadImageProps(headerUrl);
 
-        // Load and draw header image
-        const headerUrl = '/static/logo2.png';
-        const headerImage = await loadImageProps(headerUrl);
 
-        if (headerImage) {
-            doc.addImage(headerImage, 'PNG', 10, yPos, 180, 45);
-            yPos += 50;
-        } else {
-            alert('Header image could not be loaded.');
-        }
 
-        // Header generator for new pages
-        const createHeader = (doc) => {
-            let y = margin;
+                const createHeader = () => {
+                    let y = margin;
+                    const headerWidth = 180;
+                    const headerHeight = 40;
 
-            if (headerImage) {
-                doc.addImage(headerImage, 'PNG', margin, y, 40, 20);
-            }
+                    if (headerImage) {
+                        pdf.addImage(headerImage, 'PNG', margin, y, headerWidth, headerHeight);
+                    }
 
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const textStartX = headerImage ? margin + 45 : margin;
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const textStartX = headerImage ? margin + 5 : margin;
 
-            doc.setFontSize(10);
-            doc.setLineWidth(0.5);
-            doc.setDrawColor(0, 0, 0);
+                    pdf.setFontSize(10);
+                    pdf.setLineWidth(0.5);
+                    pdf.setDrawColor(0, 0, 0);
 
-            y += 22;
-            doc.line(margin, y, pageWidth - margin, y);
-            y += 4;
+                    y += headerHeight + 5;
+                    pdf.line(margin, y, pageWidth - margin, y);
+                    y += 4;
 
-            doc.text(`Report No.: ${getValue('CertificateNumber')}`, textStartX, y);
-            doc.text(`Date: ${new Date(getValue('date')).toLocaleDateString('en-GB')}`, pageWidth - margin, y, { align: 'right' });
+                    const rawDate = getValue('date');
+                    const formattedDate = (rawDate && !isNaN(new Date(rawDate))) 
+                        ? new Date(rawDate).toLocaleDateString('en-GB') 
+                        : 'N/A';
 
-            y += 3.5;
-            doc.line(margin, y, pageWidth - margin, y);
-            y += 4;
+                    pdf.text(`Report No.: ${getValue('CertificateNumber')}`, textStartX, y);
+                    pdf.text(`Date: ${formattedDate}`, pageWidth - margin, y, { align: 'right' });
 
-            doc.setFillColor(185, 28, 28);
-            doc.rect(margin, y, pageWidth - margin * 2, 10, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(14);
-            doc.text("STUFFING SURVEY REPORT", pageWidth / 2, y + 7, { align: 'center' });
-            doc.setTextColor(0, 0, 0);
+                    y += 3.5;
+                    pdf.line(margin, y, pageWidth - margin, y);
+                    y += 4;
 
-            return y + 15;
-        };
+                    pdf.setFillColor(185, 28, 28);
+                    pdf.rect(margin, y, pageWidth - margin * 2, 10, 'F');
+                    pdf.setTextColor(255, 255, 255);
+                    pdf.setFontSize(14);
+                    pdf.text("STUFFING SURVEY REPORT", pageWidth / 2, y + 7, { align: 'center' });
+                    pdf.setTextColor(0, 0, 0);
 
-        yPos = createHeader(doc);
+                    return y + 20;
+                };
+        let yPos = createHeader();
 
         const ensureSpace = (heightNeeded) => {
             if (yPos + heightNeeded > pageHeight - margin) {
-                doc.addPage();
-                yPos = createHeader(doc);
+                pdf.addPage();
+                yPos = createHeader();
             }
         };
 
         // Table 1: Basic Info
         ensureSpace(60);
-        doc.autoTable({
+        pdf.autoTable({
             startY: yPos,
             theme: 'grid',
             styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0, 0, 0] },
@@ -984,7 +982,7 @@ async function generateFCLReportPDF() {
             margin: { left: margin, right: margin }
         });
 
-        yPos = doc.lastAutoTable.finalY + 10;
+        yPos = pdf.lastAutoTable.finalY + 10;
 
         // Consignment Table
         const consignmentData = Array.from(document.querySelectorAll('#main-table tbody tr'))
@@ -993,7 +991,7 @@ async function generateFCLReportPDF() {
                 .map(cell => cell?.textContent?.trim() || 'N/A'));
 
         ensureSpace(70 + consignmentData.length * 10);
-        doc.autoTable({
+        pdf.autoTable({
             startY: yPos,
             head: [['Consignor', 'Consignee', 'Description', 'Marks & Nos.', 'Package Count', 'Gross Weight (Kgs)', 'Volume']],
             body: consignmentData,
@@ -1002,14 +1000,14 @@ async function generateFCLReportPDF() {
             headStyles: { fillColor: [255, 255, 255], textColor: 0 }
         });
 
-        yPos = doc.lastAutoTable.finalY + 10;
+        yPos = pdf.lastAutoTable.finalY + 10;
 
         // Page break
-        doc.addPage();
-        yPos = createHeader(doc);
+        pdf.addPage();
+        yPos = createHeader();
 
         // Summary Boxes
-        const boxWidth = (doc.internal.pageSize.getWidth() - margin * 2 - 15) / 4;
+        const boxWidth = (pdf.internal.pageSize.getWidth() - margin * 2 - 15) / 4;
         const boxHeight = 25;
         const summaryData = [
             { id: 'volume', label: 'Total Volume', unit: 'CBM' },
@@ -1021,21 +1019,21 @@ async function generateFCLReportPDF() {
         summaryData.forEach((item, index) => {
             const xPos = margin + index * (boxWidth + 5);
             const value = getValue(item.id);
-            doc.setDrawColor(0, 0, 0);
-            doc.setFillColor(255, 255, 255);
-            doc.rect(xPos, yPos, boxWidth, boxHeight, 'FD');
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
-            doc.text(item.label, xPos + boxWidth / 2, yPos + 9, { align: 'center' });
-            doc.setFontSize(12);
-            doc.text(`${value} ${item.unit}`, xPos + boxWidth / 2, yPos + 19, { align: 'center' });
+            pdf.setDrawColor(0, 0, 0);
+            pdf.setFillColor(255, 255, 255);
+            pdf.rect(xPos, yPos, boxWidth, boxHeight, 'FD');
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(10);
+            pdf.text(item.label, xPos + boxWidth / 2, yPos + 9, { align: 'center' });
+            pdf.setFontSize(12);
+            pdf.text(`${value} ${item.unit}`, xPos + boxWidth / 2, yPos + 19, { align: 'center' });
         });
 
         yPos += boxHeight + 10;
 
         // Remarks Table
         ensureSpace(40);
-        doc.autoTable({
+        pdf.autoTable({
             startY: yPos,
             body: [
                 ['Loading Condition', getValue('loadingCondition')],
@@ -1051,21 +1049,22 @@ async function generateFCLReportPDF() {
             margin: { left: margin, right: margin }
         });
 
-        yPos = doc.lastAutoTable.finalY + 20;
+        yPos = pdf.lastAutoTable.finalY + 20;
 
-        doc.setFontSize(12);
-        doc.text(`Surveyor: ${getValue('surveyorName')}`, margin, yPos);
-        doc.text('"ISSUED WITHOUT PREJUDICE"', margin, yPos + 8);
-        const rightX = doc.internal.pageSize.getWidth() - margin;
-        doc.text('For Viking Marine Inc.', rightX, yPos, { align: 'right' });
-        doc.text('Authorised Signatory', rightX, yPos + 8, { align: 'right' });
+        pdf.setFontSize(12);
+        pdf.text(`Surveyor: ${getValue('surveyorName')}`, margin, yPos);
+        pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, yPos + 8);
+        const rightX = pdf.internal.pageSize.getWidth() - margin;
+        pdf.text('For Viking Marine Inc.', rightX, yPos, { align: 'right' });
+        pdf.text('Authorised Signatory', rightX, yPos + 8, { align: 'right' });
 
-        doc.save('FCL_Report.pdf');
+        pdf.save('FCL_Report.pdf');
     } catch (error) {
         console.error('PDF Generation Error:', error);
         alert(`PDF Generation Failed: ${error.message}`);
     }
 }
+
 
 
 // Event listener setup
