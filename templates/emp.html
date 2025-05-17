@@ -1002,8 +1002,11 @@ async function generateFCLReportPDF() {
 
             ensureSpace(30 + consignmentData.length * 10);
 
+const marginTop = margin; // Your predefined margin
+const headerHeight = 40;
+const headerWidth = 180;
+
 pdf.autoTable({
-    startY: yPos,
     head: [[
         'Consignor',
         'Consignee',
@@ -1026,12 +1029,14 @@ pdf.autoTable({
         textColor: 0,
         fontStyle: 'bold'
     },
-    margin: { left: margin, right: margin },
-
-    // ✅ Ensures the header is placed at the top of each new page
+    margin: { top: marginTop, left: margin, right: margin }, // top margin ensures header space is reserved
     didDrawPage: function (data) {
-       let y = 40; // Use fixed Y for header; don't assign to yPos here
-        createHeader();
+        // Always draw the header at the fixed top position
+        const headerX = (pdf.internal.pageSize.getWidth() - headerWidth) / 2;
+        const headerY = marginTop;
+        
+        // Replace this with your actual header drawing logic
+        createHeader(headerX, headerY, headerWidth, headerHeight);
     }
 });
 
