@@ -1030,7 +1030,7 @@ pdf.autoTable({
 
     // ✅ Ensures the header is placed at the top of each new page
     didDrawPage: function (data) {
-        // Use fixed Y for header; don't assign to yPos here
+       let y = 40; // Use fixed Y for header; don't assign to yPos here
         createHeader();
     }
 });
