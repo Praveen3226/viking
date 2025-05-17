@@ -1002,7 +1002,7 @@ async function generateFCLReportPDF() {
 
             ensureSpace(30 + consignmentData.length * 10);
 
-     pdf.autoTable({
+pdf.autoTable({
     startY: yPos,
     head: [[
         'Consignor',
@@ -1028,10 +1028,10 @@ async function generateFCLReportPDF() {
     },
     margin: { left: margin, right: margin },
 
-    // ✅ This ensures header is drawn correctly on each autoTable page
-    didDrawPage: function () {
-        const newY = createHeader(); // returns the updated Y position
-        yPos = newY; // optional: update yPos if you have more content after
+    // ✅ Ensures the header is placed at the top of each new page
+    didDrawPage: function (data) {
+        // Use fixed Y for header; don't assign to yPos here
+        createHeader();
     }
 });
 
