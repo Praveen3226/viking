@@ -905,23 +905,23 @@ async function generateFCLReportPDF() {
             });
         }
 
-            const headerUrl = '/static/logo2.png';  // your custom header image
-            const headerImage = await loadImageProps(headerUrl);
+        const headerUrl = '/static/logo2.png';  // your custom header image
+        const headerImage = await loadImageProps(headerUrl);
 
-            if (headerImage) {
-                const headerX = 10;      // Left margin
-                const headerY = cursorY; // Top position
-                const headerWidth = 180; // Almost full width of A4 (210mm - margins)
-                const headerHeight = 45; // Adjust based on your image
+        if (headerImage) {
+            const headerX = 10;      // Left margin
+            const headerY = cursorY; // Top position
+            const headerWidth = 180; // Almost full width of A4 (210mm - margins)
+            const headerHeight = 45; // Adjust based on your image
 
-                // Add image
-                pdf.addImage(headerImage, 'PNG', headerX, headerY, headerWidth, headerHeight);
+            // Add image
+            pdf.addImage(headerImage, 'PNG', headerX, headerY, headerWidth, headerHeight);
 
-                // Move cursorY below the image
-                cursorY += headerHeight + 5;
-            } else {
-                alert('Header image could not be loaded.');
-            }
+            // Move cursorY below the image
+            cursorY += headerHeight + 5;
+        } else {
+            alert('Header image could not be loaded.');
+        }
 
 
         // Header generator for new pages
