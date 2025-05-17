@@ -1002,32 +1002,37 @@ async function generateFCLReportPDF() {
 
             ensureSpace(30 + consignmentData.length * 10);
 
-            pdf.autoTable({
-                startY: yPos,
-                head: [[
-                    'Consignor',
-                    'Consignee',
-                    'Description',
-                    'Marks & Nos.',
-                    'Package Count',
-                    'Gross Weight (Kgs)',
-                    'Volume'
-                ]],
-                body: consignmentData,
-                theme: 'grid',
-                styles: {
-                    fontSize: 9,
-                    lineWidth: 0.5,
-                    lineColor: [0, 0, 0],
-                    cellPadding: 2
-                },
-                headStyles: {
-                    fillColor: [255, 255, 255],
-                    textColor: 0,
-                    fontStyle: 'bold'
-                },
-                margin: { left: margin, right: margin }
-            });
+           pdf.autoTable({
+    startY: yPos,
+    head: [[
+        'Consignor',
+        'Consignee',
+        'Description',
+        'Marks & Nos.',
+        'Package Count',
+        'Gross Weight (Kgs)',
+        'Volume'
+    ]],
+    body: consignmentData,
+    theme: 'grid',
+    styles: {
+        fontSize: 9,
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0],
+        cellPadding: 2
+    },
+    headStyles: {
+        fillColor: [255, 255, 255],
+        textColor: 0,
+        fontStyle: 'bold'
+    },
+    margin: { left: margin, right: margin },
+
+    // 👇 This ensures header is re-added after every page break in the table
+    didDrawPage: function (data) {
+        createHeader(); // Your header function already adjusts internal spacing
+    }
+});
 
 
 
