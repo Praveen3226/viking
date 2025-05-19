@@ -477,72 +477,205 @@ h1 {
                 document.querySelector('.sidebar-backdrop').classList.remove('active');
             });
         });
-        async function generatePDF() {
-    try {
-        // Hide unnecessary elements
-        const elementsToHide = document.querySelectorAll('.nav-bar, .sidebar, .sidebar-backdrop, button, .status, .status-badge, .footer , .status-indicator , .status-indicator');
-        const originalStyles = [];
-        elementsToHide.forEach(el => {
-            originalStyles.push(el.style.display);
-            el.style.display = 'none';
-        });
 
-        // Capture the main content
-        const element = document.querySelector('.max-w-5xl');
-        if (!element) throw new Error("Main content not found!");
 
-        const canvas = await html2canvas(element, {
-            scale: 2,  // Good balance between quality and performance
-            useCORS: true,
-            logging: true,
-            backgroundColor: '#ffffff'
-        });
+    async function generatePDF() {
+        try {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-        const { jsPDF } = window.jspdf || window;
-        const doc = new jsPDF('p', 'mm', 'a4');
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const imgWidth = pageWidth - 20; // 10mm margins on both sides
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        // Slice the canvas into pages
-        let yPosition = 0;
-        const pageCanvas = document.createElement('canvas');
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = Math.floor((pageHeight * canvas.width) / imgWidth);
-        const pageCtx = pageCanvas.getContext('2d');
+            const margin = 10;
+            const pageHeight = pdf.internal.pageSize.height;
+            let yPos = margin;
 
-        while (yPosition < canvas.height) {
-            pageCtx.clearRect(0, 0, pageCanvas.width, pageCanvas.height);
-            pageCtx.drawImage(canvas, 0, yPosition, canvas.width, pageCanvas.height, 0, 0, canvas.width, pageCanvas.height);
+            // Helper functions
+            const getValue = (field) => {
+                const el = document.querySelector(`[data-field="${field}"]`);
+                return el ? el.textContent.trim() : 'N/A';
+            };
 
-            const imgData = pageCanvas.toDataURL('image/png');
-            doc.addImage(imgData, 'PNG', 10, 10, imgWidth, pageHeight - 20);
+            // Header implementation
+            const createHeader = async () => {
+                let y = margin;
+                const headerWidth = 180;
+                const headerHeight = 40;
 
-            yPosition += pageCanvas.height;
-            if (yPosition < canvas.height) doc.addPage();
+                // Load logo (update path if needed)
+                try {
+                    const headerImage = await loadImageProps('/static/logo2.png');
+                    pdf.addImage(headerImage, 'PNG', margin, y, headerWidth, headerHeight);
+                } catch (error) {
+                    console.log('Header image not found, using text only');
+                }
+
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                pdf.setFontSize(10);
+                pdf.setLineWidth(0.5);
+                pdf.setDrawColor(0, 0, 0);
+
+                y += headerHeight + 5;
+                pdf.line(margin, y, pageWidth - margin, y);
+                y += 4;
+
+                const rawDate = "{{ form['date'] }}";
+                const formattedDate = rawDate ? new Date(rawDate).toLocaleDateString('en-GB') : 'N/A';
+
+                pdf.text(`Report No.: {{ form['CertificateNumber'] }}`, margin, y);
+                pdf.text(`Date: ${formattedDate}`, pageWidth - margin, y, { align: 'right' });
+
+                y += 3.5;
+                pdf.line(margin, y, pageWidth - margin, y);
+                y += 4;
+
+                pdf.setFillColor(185, 28, 28);
+                pdf.rect(margin, y, pageWidth - margin * 2, 10, 'F');
+                pdf.setTextColor(255, 255, 255);
+                pdf.setFontSize(14);
+                pdf.text("STUFFING SURVEY REPORT", pageWidth / 2, y + 7, { align: 'center' });
+                pdf.setTextColor(0, 0, 0);
+
+                return y + 20;
+            };
+
+            // Page space management
+            const ensureSpace = (heightNeeded) => {
+                if (yPos + heightNeeded > pageHeight - margin) {
+                    pdf.addPage();
+                    yPos = createHeader();
+                }
+            };
+
+            // Initialize header
+            yPos = await createHeader();
+
+            // Main data table
+            ensureSpace(60);
+            pdf.autoTable({
+                startY: yPos,
+                theme: 'grid',
+                styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0,0,0], cellPadding: 2 },
+                headStyles: { fillColor: [255,255,255], textColor: 0, fontStyle: 'bold' },
+                body: [
+                    ['Applicant for Survey', `{{ form['applicant_name'] }}`, 'Container No.', `{{ form['container_number'] }}`],
+                    ['Size/Type', `{{ form['size_type'] }}`, 'Stuffing Completion', `{{ form['stuffing_comp_date_time'] }}`],
+                    ['Tare Weight (Kgs)', `{{ form['tare_weight'] }}`, 'Seal Number', `{{ form['seal_number'] }}`],
+                    ['Payload Capacity', `{{ form['payload_capacity'] }}`, 'Seal Date/Time', `{{ form['stuffing_comp_date_time'] }}`],
+                    ['Port of Discharge', `{{ form['port_of_discharge'] }}`, 'Place of Stuffing', `{{ form['place_of_stuffing'] }}`]
+                ],
+                columnStyles: {
+                    0: { cellWidth: 45, fontStyle: 'bold' },
+                    1: { cellWidth: 45 },
+                    2: { cellWidth: 45, fontStyle: 'bold' },
+                    3: { cellWidth: 45 }
+                },
+                margin: { left: margin, right: margin }
+            });
+
+            yPos = pdf.lastAutoTable.finalY + 10;
+
+            // Consignment table
+            const consignmentData = Array.from(document.querySelectorAll('#consignment-table tbody tr'))
+                .map(row => Array.from(row.querySelectorAll('td'))
+                    .map(cell => cell.textContent.trim()));
+
+            ensureSpace(30 + consignmentData.length * 10);
+            pdf.autoTable({
+                startY: yPos,
+                head: [['Consignor', 'Consignee', 'Description', 'Marks & Nos.', 'Packages', 'Weight', 'Volume']],
+                   body: consignmentData,
+    theme: 'grid',
+    styles: {
+        fontSize: 9,
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0],  // Black border color
+        cellPadding: 2,
+        fillColor: [255, 255, 255]  // White background
+    },
+    headStyles: {
+        fillColor: [255, 255, 255],
+        textColor: 0,
+        fontStyle: 'bold',
+        lineWidth: 0.5,
+        lineColor: [0, 0, 0]  // Black border for header
+    },
+    margin: { left: margin, right: margin }
+});
+
+            yPos = pdf.lastAutoTable.finalY + 10;
+
+            // Summary boxes
+            const boxWidth = (pdf.internal.pageSize.getWidth() - margin * 2 - 15) / 4;
+            const boxHeight = 25;
+            const summaryValues = {
+                volume: `{{ form['cbm'] }}`,
+                totalPackages: `{{ form['totalPackages'] }}`,
+                grossWeight: `{{ form['total_gross_weight'] }}`,
+                containerWeight: `{{ form['declared_total_weight'] }}`
+            };
+
+            Object.values(summaryValues).forEach((value, index) => {
+                const xPos = margin + index * (boxWidth + 5);
+                pdf.setDrawColor(0, 0, 0);
+                pdf.setFillColor(255, 255, 255);
+                pdf.rect(xPos, yPos, boxWidth, boxHeight, 'FD');
+                pdf.setFontSize(10);
+                pdf.text(
+                    ['Total Volume', 'Total Packages', 'Gross Weight', 'Container Weight'][index],
+                    xPos + boxWidth/2, 
+                    yPos + 9, 
+                    { align: 'center' }
+                );
+                pdf.setFontSize(12);
+                pdf.text(
+                    `${value} ${['CBM', 'Pkgs', 'Kgs', 'Kgs'][index]}`,
+                    xPos + boxWidth/2,
+                    yPos + 19,
+                    { align: 'center' }
+                );
+                
+
+            });
+
+            yPos += boxHeight + 10;
+
+            // Remarks section
+            ensureSpace(40);
+            pdf.autoTable({
+                startY: yPos,
+                body: [
+                    ['Loading Condition', `{{ form['loading_condition'] }}`],
+                    ['Lashing', `{{ form['lashing'] }}`],
+                    ['Others', `{{ form['others'] }}`]
+                ],
+                theme: 'grid',
+                styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0,0,0], cellPadding: 2 }
+            });
+
+            yPos = pdf.lastAutoTable.finalY + 20;
+
+            // Footer
+            pdf.setFontSize(12);
+            pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, margin, yPos);
+            pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, yPos + 8);
+            pdf.text('For Viking Marine Inc.', pdf.internal.pageSize.width - margin, yPos, { align: 'right' });
+            pdf.text('Authorised Signatory', pdf.internal.pageSize.width - margin, yPos + 8, { align: 'right' });
+
+            pdf.save('FCL_Report.pdf');
+        } catch (error) {
+            console.error('PDF Generation Error:', error);
+            alert(`PDF Generation Failed: ${error.message}`);
         }
-
-        // AYlabs Footer (optional)
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'italic');
-        doc.setTextColor(128);
-
-        // Restore hidden elements
-        elementsToHide.forEach((el, index) => {
-            el.style.display = originalStyles[index];
-        });
-
-        // Get certificate number dynamically
-        const certNo = document.getElementById('certificateNumber')?.textContent.trim() || 'N/A';
-        doc.save(`Certificate_${certNo}.pdf`);
-    } catch (error) {
-        console.error("PDF generation failed:", error);
-        alert("Failed to generate PDF. Check the console for details.");
     }
-}
 
-
+    async function loadImageProps(url) {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+        });
+    }
 
     </script>
 </body>
