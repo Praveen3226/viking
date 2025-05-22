@@ -583,11 +583,11 @@ async function generatePDF() {
                 ['Place of Stuffing', `{{ form['place_of_stuffing'] }}`]
             ],
             columnStyles: {
-                0: { cellWidth: 60, fontStyle: 'bold' },
-                1: { cellWidth: 120 }
+                0: { cellWidth: 60, fontStyle: 'bold' ,cellPadding: 2 },
+                1: { cellWidth: 120 , cellPadding: 2 }
             },
             tableLineColor: [0, 0, 0],     // Ensure table border lines are black
-            tableLineWidth: 1.5,
+            tableLineWidth: 1.0,
             margin: { left: margin, right: margin }
         });
              
