@@ -647,7 +647,11 @@ async function generatePDF() {
             styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0, 0, 0], cellPadding: 2 },
             margin: { left: margin, right: margin },
             didDrawPage: function (data) {
-                drawHeader(pdf);
+                // Only draw header if it's a new page
+                if (pdf.internal.getCurrentPageInfo().pageNumber > 1) {
+                    const newY = drawHeader(pdf);  // redraw header
+                    data.cursor.y = newY + 5;      // shift cursor below the header to prevent overlap
+                }
             }
         });
 
