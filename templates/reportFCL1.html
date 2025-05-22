@@ -564,7 +564,7 @@ async function generatePDF() {
                 fontSize: 10,
                 lineColor: [0, 0, 0],      // Border color
                 lineWidth: 0.5,            // Border thickness
-                cellPadding: 2,
+                cellPadding: 1,
                 halign: 'left'
             },
             headStyles: {
@@ -670,14 +670,18 @@ async function generatePDF() {
             }
         });
 
-        yPos = pdf.lastAutoTable.finalY + 20;
-
-        // Footer
-        pdf.setFontSize(12);
-        pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, yPos + 8);
-        pdf.text('For Viking Marine Inc.', pageWidth - margin, yPos, { align: 'right' });
-        pdf.text('Authorised Signatory', pageWidth - margin, yPos + 8, { align: 'right' });
-        pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, pageWidth - margin, yPos + 12, { align: 'right' });
+            let signY = yPos + 20;  // Move this below the table area
+            
+            // Left-aligned note
+            pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, signY);
+            
+            // Right-aligned signature section
+            pdf.text('For Viking Marine Inc.', pageWidth - margin, signY, { align: 'right' });
+            pdf.text('Authorised Signatory', pageWidth - margin, signY + 8, { align: 'right' });
+            pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, pageWidth - margin, signY + 16, { align: 'right' });
+            
+            // Add space after signature
+            signY += 30;  // Reserve space if more elements follow
         pdf.save('FCL_Report.pdf');
     } catch (error) {
         console.error('PDF Generation Error:', error);
