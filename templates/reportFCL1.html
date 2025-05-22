@@ -482,187 +482,182 @@ h1 {
 
 
 
-    async function generatePDF() {
+async function generatePDF() {
+    try {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+        const margin = 10;
+        const pageHeight = pdf.internal.pageSize.height;
+        const pageWidth = pdf.internal.pageSize.width;
+
+        const getValue = (field) => {
+            const el = document.querySelector(`[data-field="${field}"]`);
+            return el ? el.textContent.trim() : 'N/A';
+        };
+
+        const loadImageProps = async (url) => {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        };
+
+        // Load logo once
+        let headerImage = null;
         try {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            headerImage = await loadImageProps('/static/logo2.png');
+        } catch (err) {
+            console.warn("Logo not loaded, skipping image.");
+        }
 
-            const margin = 10;
-            const pageHeight = pdf.internal.pageSize.height;
-            const pageWidth = pdf.internal.pageSize.width;
+        const formattedDate = new Date("{{ form['date'] }}").toLocaleDateString('en-GB');
 
-            const getValue = (field) => {
-                const el = document.querySelector(`[data-field="${field}"]`);
-                return el ? el.textContent.trim() : 'N/A';
-            };
+        const drawHeader = (doc) => {
+            let y = margin;
 
-            const loadImageProps = async (url) => {
-                const response = await fetch(url);
-                const blob = await response.blob();
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(blob);
-                });
-            };
-
-            // Load header image outside the didDrawPage so it's reused
-            let headerImage = null;
-            try {
-                headerImage = await loadImageProps('/static/logo2.png');
-            } catch (err) {
-                console.warn("Logo not loaded, skipping image.");
+            if (headerImage) {
+                doc.addImage(headerImage, 'PNG', margin, y, 180, 40);
             }
 
-            const formattedDate = new Date("{{ form['date'] }}").toLocaleDateString('en-GB');
+            y += 45;
 
-            // Header drawing logic for every page
-            const drawHeader = (doc) => {
-                let y = margin;
+            doc.setFontSize(10);
+            doc.setDrawColor(0);
+            doc.line(margin, y, pageWidth - margin, y);
+            y += 5;
 
-                if (headerImage) {
-                    doc.addImage(headerImage, 'PNG', margin, y, 180, 40);
-                }
+            doc.text(`Report No.: {{ form['CertificateNumber'] }}`, margin, y);
+            doc.text(`Date: ${formattedDate}`, pageWidth - margin, y, { align: 'right' });
 
-                y += 45;
+            y += 4;
+            doc.line(margin, y, pageWidth - margin, y);
+            y += 6;
 
-                doc.setFontSize(10);
-                doc.setDrawColor(0);
-                doc.line(margin, y, pageWidth - margin, y);
-                y += 5;
+            doc.setFillColor(185, 28, 28);
+            doc.rect(margin, y, pageWidth - margin * 2, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(14);
+            doc.text("STUFFING SURVEY REPORT", pageWidth / 2, y + 7, { align: 'center' });
+            doc.setTextColor(0, 0, 0);
 
-                doc.text(`Report No.: {{ form['CertificateNumber'] }}`, margin, y);
-                doc.text(`Date: ${formattedDate}`, pageWidth - margin, y, { align: 'right' });
+            return y + 15;
+        };
 
-                y += 4;
-                doc.line(margin, y, pageWidth - margin, y);
-                y += 6;
+        let yPos = drawHeader(pdf);
 
-                doc.setFillColor(185, 28, 28);
-                doc.rect(margin, y, pageWidth - margin * 2, 10, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(14);
-                doc.text("STUFFING SURVEY REPORT", pageWidth / 2, y + 7, { align: 'center' });
-                doc.setTextColor(0, 0, 0);
+        const ensureSpace = (heightNeeded) => {
+            if (yPos + heightNeeded > pageHeight - margin) {
+                pdf.addPage();
+                yPos = drawHeader(pdf);
+            }
+        };
 
-                return y + 15;
-            };
+        // Table 1: Container Details (NO header here — header is handled globally)
+        ensureSpace(60);
+        pdf.autoTable({
+            startY: yPos,
+            theme: 'grid',
+            styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0, 0, 0], cellPadding: 2 },
+            headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' },
+            body: [
+                ['Applicant for Survey', `{{ form['applicant_name'] }}`, 'Container No.', `{{ form['container_number'] }}`],
+                ['Size/Type', `{{ form['size_type'] }}`, 'Stuffing Completion', `{{ form['stuffing_comp_date_time'] }}`],
+                ['Tare Weight (Kgs)', `{{ form['tare_weight'] }}`, 'Seal Number', `{{ form['seal_number'] }}`],
+                ['Payload Capacity', `{{ form['payload_capacity'] }}`, 'Seal Date/Time', `{{ form['stuffing_comp_date_time'] }}`],
+                ['Port of Discharge', `{{ form['port_of_discharge'] }}`, 'Place of Stuffing', `{{ form['place_of_stuffing'] }}`]
+            ],
+            columnStyles: {
+                0: { cellWidth: 45, fontStyle: 'bold' },
+                1: { cellWidth: 45 },
+                2: { cellWidth: 45, fontStyle: 'bold' },
+                3: { cellWidth: 45 }
+            },
+            margin: { left: margin, right: margin },
+        });
 
-            let yPos = drawHeader(pdf);
+        yPos = pdf.lastAutoTable.finalY + 10;
 
-            const ensureSpace = (heightNeeded) => {
-                if (yPos + heightNeeded > pageHeight - margin) {
-                    pdf.addPage();
-                    yPos = drawHeader(pdf);
-                }
-            };
+        // Table 2: Consignment
+        const consignmentData = Array.from(document.querySelectorAll('#consignment-table tbody tr'))
+            .map(row => Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim()));
 
-            // Data Table
-            ensureSpace(60);
-            pdf.autoTable({
-                startY: yPos,
-                theme: 'grid',
-                styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0, 0, 0], cellPadding: 2 },
-                headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' },
-                body: [
-                    ['Applicant for Survey', `{{ form['applicant_name'] }}`, 'Container No.', `{{ form['container_number'] }}`],
-                    ['Size/Type', `{{ form['size_type'] }}`, 'Stuffing Completion', `{{ form['stuffing_comp_date_time'] }}`],
-                    ['Tare Weight (Kgs)', `{{ form['tare_weight'] }}`, 'Seal Number', `{{ form['seal_number'] }}`],
-                    ['Payload Capacity', `{{ form['payload_capacity'] }}`, 'Seal Date/Time', `{{ form['stuffing_comp_date_time'] }}`],
-                    ['Port of Discharge', `{{ form['port_of_discharge'] }}`, 'Place of Stuffing', `{{ form['place_of_stuffing'] }}`]
-                ],
-                columnStyles: {
-                    0: { cellWidth: 45, fontStyle: 'bold' },
-                    1: { cellWidth: 45 },
-                    2: { cellWidth: 45, fontStyle: 'bold' },
-                    3: { cellWidth: 45 }
-                },
-                margin: { left: margin, right: margin },
-                    didDrawPage: function (data) {
-                        if (pdf.internal.getNumberOfPages() > 1 || data.pageCount > 1) {
-                            drawHeader(pdf);
-                        }
-                    }
-            });
+        ensureSpace(30 + consignmentData.length * 10);
+        pdf.autoTable({
+            startY: yPos,
+            head: [['Consignor', 'Consignee', 'Description', 'Marks & Nos.', 'Packages', 'Weight', 'Volume']],
+            body: consignmentData,
+            theme: 'grid',
+            styles: { fontSize: 9, lineWidth: 0.5, cellPadding: 2 },
+            headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' },
+            margin: { left: margin, right: margin },
+            didDrawPage: function (data) {
+                drawHeader(pdf);
+            }
+        });
 
-            yPos = pdf.lastAutoTable.finalY + 10;
+        yPos = pdf.lastAutoTable.finalY + 10;
 
-            // Consignment Table
-            const consignmentData = Array.from(document.querySelectorAll('#consignment-table tbody tr'))
-                .map(row => Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim()));
+        // Summary Boxes
+        const summaryValues = {
+            volume: `{{ form['cbm'] }}`,
+            totalPackages: `{{ form['totalPackages'] }}`,
+            grossWeight: `{{ form['total_gross_weight'] }}`,
+            containerWeight: `{{ form['declared_total_weight'] }}`
+        };
 
-            ensureSpace(30 + consignmentData.length * 10);
-            pdf.autoTable({
-                startY: yPos,
-                head: [['Consignor', 'Consignee', 'Description', 'Marks & Nos.', 'Packages', 'Weight', 'Volume']],
-                body: consignmentData,
-                theme: 'grid',
-                styles: { fontSize: 9, lineWidth: 0.5, cellPadding: 2, fillColor: [255, 255, 255] },
-                headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' },
-                margin: { left: margin, right: margin },
-                didDrawPage: function (data) {
-                    drawHeader(pdf);
-                }
-            });
+        const boxWidth = (pageWidth - margin * 2 - 15) / 4;
+        const boxHeight = 25;
 
-            yPos = pdf.lastAutoTable.finalY + 10;
-
-            // Summary Boxes
-            const summaryValues = {
-                volume: `{{ form['cbm'] }}`,
-                totalPackages: `{{ form['totalPackages'] }}`,
-                grossWeight: `{{ form['total_gross_weight'] }}`,
-                containerWeight: `{{ form['declared_total_weight'] }}`
-            };
-
-            const boxWidth = (pageWidth - margin * 2 - 15) / 4;
-            const boxHeight = 25;
-
-            Object.values(summaryValues).forEach((value, index) => {
-                const xPos = margin + index * (boxWidth + 5);
-                pdf.setDrawColor(0);
-                pdf.setFillColor(255, 255, 255);
-                pdf.rect(xPos, yPos, boxWidth, boxHeight, 'FD');
-                pdf.setFontSize(10);
-                pdf.text(['Total Volume', 'Total Packages', 'Gross Weight', 'Container Weight'][index], xPos + boxWidth / 2, yPos + 9, { align: 'center' });
-                pdf.setFontSize(12);
-                pdf.text(`${value} ${['CBM', 'Pkgs', 'Kgs', 'Kgs'][index]}`, xPos + boxWidth / 2, yPos + 19, { align: 'center' });
-            });
-
-            yPos += boxHeight + 10;
-
-            // Remarks Section
-            ensureSpace(40);
-            pdf.autoTable({
-                startY: yPos,
-                body: [
-                    ['Loading Condition', `{{ form['loading_condition'] }}`],
-                    ['Lashing', `{{ form['lashing'] }}`],
-                    ['Others', `{{ form['others'] }}`]
-                ],
-                theme: 'grid',
-                styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0, 0, 0], cellPadding: 2 },
-                margin: { left: margin, right: margin },
-                didDrawPage: function (data) {
-                    drawHeader(pdf);
-                }
-            });
-
-            yPos = pdf.lastAutoTable.finalY + 20;
-
-            // Footer
+        Object.values(summaryValues).forEach((value, index) => {
+            const xPos = margin + index * (boxWidth + 5);
+            pdf.setDrawColor(0);
+            pdf.setFillColor(255, 255, 255);
+            pdf.rect(xPos, yPos, boxWidth, boxHeight, 'FD');
+            pdf.setFontSize(10);
+            pdf.text(['Total Volume', 'Total Packages', 'Gross Weight', 'Container Weight'][index], xPos + boxWidth / 2, yPos + 9, { align: 'center' });
             pdf.setFontSize(12);
-            pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, margin, yPos);
-            pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, yPos + 8);
-            pdf.text('For Viking Marine Inc.', pageWidth - margin, yPos, { align: 'right' });
-            pdf.text('Authorised Signatory', pageWidth - margin, yPos + 8, { align: 'right' });
+            pdf.text(`${value} ${['CBM', 'Pkgs', 'Kgs', 'Kgs'][index]}`, xPos + boxWidth / 2, yPos + 19, { align: 'center' });
+        });
 
-            pdf.save('FCL_Report.pdf');
-        } catch (error) {
-            console.error('PDF Generation Error:', error);
-            alert(`PDF Generation Failed: ${error.message}`);
-        }
+        yPos += boxHeight + 10;
+
+        // Table 3: Remarks Section
+        ensureSpace(40);
+        pdf.autoTable({
+            startY: yPos,
+            body: [
+                ['Loading Condition', `{{ form['loading_condition'] }}`],
+                ['Lashing', `{{ form['lashing'] }}`],
+                ['Others', `{{ form['others'] }}`]
+            ],
+            theme: 'grid',
+            styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0, 0, 0], cellPadding: 2 },
+            margin: { left: margin, right: margin },
+            didDrawPage: function (data) {
+                drawHeader(pdf);
+            }
+        });
+
+        yPos = pdf.lastAutoTable.finalY + 20;
+
+        // Footer
+        pdf.setFontSize(12);
+        pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, margin, yPos);
+        pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, yPos + 8);
+        pdf.text('For Viking Marine Inc.', pageWidth - margin, yPos, { align: 'right' });
+        pdf.text('Authorised Signatory', pageWidth - margin, yPos + 8, { align: 'right' });
+
+        pdf.save('FCL_Report.pdf');
+    } catch (error) {
+        console.error('PDF Generation Error:', error);
+        alert(`PDF Generation Failed: ${error.message}`);
     }
+}
+
 </script>
 
     </script>
