@@ -555,45 +555,43 @@ async function generatePDF() {
             }
         };
 
-            pdf.autoTable({
-                startY: yPos,
-                theme: 'grid',
-                styles: {
-                    fontSize: 10,
-                    lineColor: [0, 0, 0],
-                    lineWidth: 0.5,
-                    halign: 'left',
-                    textColor: [0, 0, 0],
-                    cellPadding: 3
-                },
-                body: [
-                    ['Applicant for Survey', `{{ form['applicant_name'] }}`],
-                    ['Container No.', `{{ form['container_number'] }}`],
-                    ['Size/Type', `{{ form['size_type'] }}`],
-                    ['Stuffing Completion', `{{ form['stuffing_comp_date_time'] }}`],
-                    ['Tare Weight (Kgs)', `{{ form['tare_weight'] }}`],
-                    ['Seal Number', `{{ form['seal_number'] }}`],
-                    ['Payload Capacity', `{{ form['payload_capacity'] }}`],
-                    ['Seal Date/Time', `{{ form['stuffing_comp_date_time'] }}`],
-                    ['Port of Discharge', `{{ form['port_of_discharge'] }}`],
-                    ['Place of Stuffing', `{{ form['place_of_stuffing'] }}`]
-                ],
-                // Ensuring exactly 2 columns — no ghost columns
-                columnStyles: {
-                    0: { cellWidth: 75, fontStyle: 'bold' },
-                    1: { cellWidth: 105 }
-                },
-                didDrawCell: function (data) {
-                    // Clear any trailing overflow cell (sometimes added by default)
-                    if (data.column.index > 1) {
-                        data.cell.text = '';
-                    }
-                },
-                margin: { left: margin, right: margin },
-                tableLineColor: [0, 0, 0],
-                tableLineWidth: 1.0
-            });
-
+               ensureSpace(60);
+                pdf.autoTable({
+                    startY: yPos,
+                    theme: 'grid',
+                    styles: {
+                        fontSize: 10,
+                        lineColor: [0, 0, 0],      // Border color
+                        lineWidth: 0.5,            // Border thickness
+                        halign: 'left',
+                        textColor: [0, 0, 0],      // Black text
+                        cellPadding: 3
+                    },
+                    headStyles: {
+                        fillColor: [0, 0, 0],       // Black header background
+                        textColor: [255, 255, 255], // White header text
+                        fontStyle: 'bold'
+                    },
+                    body: [
+                        ['Applicant for Survey', `{{ form['applicant_name'] }}`],
+                        ['Container No.', `{{ form['container_number'] }}`],
+                        ['Size/Type', `{{ form['size_type'] }}`],
+                        ['Stuffing Completion', `{{ form['stuffing_comp_date_time'] }}`],
+                        ['Tare Weight (Kgs)', `{{ form['tare_weight'] }}`],
+                        ['Seal Number', `{{ form['seal_number'] }}`],
+                        ['Payload Capacity', `{{ form['payload_capacity'] }}`],
+                        ['Seal Date/Time', `{{ form['stuffing_comp_date_time'] }}`],
+                        ['Port of Discharge', `{{ form['port_of_discharge'] }}`],
+                        ['Place of Stuffing', `{{ form['place_of_stuffing'] }}`]
+                    ],
+                    columnStyles: {
+                        0: { cellWidth: 60, fontStyle: 'bold' },  // Label
+                        1: { cellWidth: 120 }                     // Value
+                    },
+                    tableLineColor: [0, 0, 0],   // Table border lines
+                    tableLineWidth: 1.0,
+                    margin: { left: margin, right: margin }
+                });
         // Table 2: Consignment
         const consignmentData = Array.from(document.querySelectorAll('#consignment-table tbody tr'))
             .map(row => Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim()));
