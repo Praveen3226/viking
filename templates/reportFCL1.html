@@ -677,7 +677,7 @@ async function generatePDF() {
         pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, yPos + 8);
         pdf.text('For Viking Marine Inc.', pageWidth - margin, yPos, { align: 'right' });
         pdf.text('Authorised Signatory', pageWidth - margin, yPos + 8, { align: 'right' });
-        pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, margin, yPos);
+        pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, pageWidth - margin, yPos + 12, { align: 'right' });
         pdf.save('FCL_Report.pdf');
     } catch (error) {
         console.error('PDF Generation Error:', error);
