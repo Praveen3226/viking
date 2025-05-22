@@ -578,9 +578,11 @@ h1 {
                     3: { cellWidth: 45 }
                 },
                 margin: { left: margin, right: margin },
-                didDrawPage: function (data) {
-                    drawHeader(pdf);
-                }
+                    didDrawPage: function (data) {
+                        if (pdf.internal.getNumberOfPages() > 1 || data.pageCount > 1) {
+                            drawHeader(pdf);
+                        }
+                    }
             });
 
             yPos = pdf.lastAutoTable.finalY + 10;
