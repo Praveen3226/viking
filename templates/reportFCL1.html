@@ -676,14 +676,14 @@ async function generatePDF() {
         
         // ✅ Use final Y of the table to position the signature block
         let finalTableY = pdf.autoTable.previous.finalY || yPos;
-        let signY = finalTableY + 60;  // Add spacing below the table
+        let signY = finalTableY + 50;  // Add spacing below the table
         
         // ✍️ Signature and footer block
         pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, signY);
         
         pdf.text('For Viking Marine Inc.', pageWidth - margin, signY, { align: 'right' });
         pdf.text('Authorised Signatory', pageWidth - margin, signY + 8, { align: 'right' });
-        pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, pageWidth - margin, signY + 26, { align: 'right' });
+        pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, pageWidth - margin, signY + 36, { align: 'right' });
         
         // 🧭 Optional: reserve more space below if needed
         signY += 30;
