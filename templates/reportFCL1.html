@@ -516,37 +516,36 @@ async function generatePDF() {
 
         const formattedDate = new Date("{{ form['date'] }}").toLocaleDateString('en-GB');
 
-        const drawHeader = (doc) => {
-            let y = margin;
+       const drawHeader = (doc) => {
+    let y = margin;
 
-            if (headerImage) {
-                doc.addImage(headerImage, 'PNG', margin, y, 180, 40);
-            }
+    if (headerImage) {
+        doc.addImage(headerImage, 'PNG', margin, y, 180, 40);
+    }
 
-            y += 45;
+    y += 45;
 
-            doc.setFontSize(10);
-            doc.setDrawColor(0);
-            doc.line(margin, y, pageWidth - margin, y);
-            y += 5;
+    doc.setFontSize(10);
+    doc.setDrawColor(0);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 5;
 
-            doc.text(`Report No.: {{ form['CertificateNumber'] }}`, margin, y);
-            doc.text(`Date: ${formattedDate}`, pageWidth - margin, y, { align: 'right' });
+    doc.text(`Report No.: {{ form['CertificateNumber'] }}`, margin, y);
+    doc.text(`Date: ${formattedDate}`, pageWidth - margin, y, { align: 'right' });
 
-            y += 4;
-            doc.line(margin, y, pageWidth - margin, y);
-            y += 6;
+    y += 4;
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 6;
 
-            doc.setFillColor(185, 28, 28);
-            doc.rect(margin, y, pageWidth - margin * 2, 10, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(14);
-            doc.text("STUFFING SURVEY REPORT", pageWidth / 2, y + 7, { align: 'center' });
-            doc.setTextColor(0, 0, 0);
+    doc.setFillColor(185, 28, 28);
+    doc.rect(margin, y, pageWidth - margin * 2, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.text("STUFFING SURVEY REPORT", pageWidth / 2, y + 7, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
 
-            return y + 15;
-        };
-
+    return y + 15; // Return new Y position after header
+};
         let yPos = drawHeader(pdf);
 
         const ensureSpace = (heightNeeded) => {
