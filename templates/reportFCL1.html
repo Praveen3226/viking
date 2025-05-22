@@ -594,6 +594,7 @@ async function generatePDF() {
             styles: { fontSize: 9, lineWidth: 0.5, cellPadding: 2 },
             headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' },
             margin: { left: margin, right: margin },
+            pageBreak: 'avoid', // ← prevents full-table jumps
             didDrawPage: function (data) {
                 drawHeader(pdf);
             }
