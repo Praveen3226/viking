@@ -585,19 +585,29 @@ async function generatePDF() {
         const consignmentData = Array.from(document.querySelectorAll('#consignment-table tbody tr'))
             .map(row => Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim()));
 
-        ensureSpace(30 + consignmentData.length * 10);
-        pdf.autoTable({
-            startY: yPos,
-            head: [['Consignor', 'Consignee', 'Description', 'Marks & Nos.', 'Packages', 'Weight', 'Volume']],
-            body: consignmentData,
-            theme: 'grid',
-            styles: { fontSize: 9, lineWidth: 0.5, cellPadding: 2 },
-            headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' },
-            margin: { left: margin, right: margin },
-            didDrawPage: function (data) {
-                drawHeader(pdf);
-            }
-        });
+            const gapInMM = 30;
+            const gapInPts = pdf.internal.scaleFactor * gapInMM; // Convert mm to points
+            
+            pdf.autoTable({
+                startY: yPos,
+                head: [['Consignor', 'Consignee', 'Description', 'Marks & Nos.', 'Packages', 'Weight', 'Volume']],
+                body: consignmentData,
+                theme: 'grid',
+                styles: { fontSize: 9, lineWidth: 0.5, cellPadding: 2 },
+                headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' },
+                margin: { left: margin, right: margin },
+                didDrawPage: function (data) {
+                    drawHeader(pdf);
+            
+                    // If we're on a page AFTER the first table page, apply top spacing
+                    if (pdf.internal.getNumberOfPages() > 1 && data.pageCount > 1 && data.cursor.y <= 50) {
+                        pdf.setPage(pdf.internal.getCurrentPageInfo().pageNumber);
+                        pdf.setDrawColor(255); // invisible line trick
+                        pdf.line(0, gapInPts, 0, gapInPts); // just moves the cursor
+                        data.cursor.y = gapInPts;
+                    }
+                }
+            });
 
         yPos = pdf.lastAutoTable.finalY + 10;
 
