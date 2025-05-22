@@ -606,7 +606,7 @@ async function generatePDF() {
                 head: [['Consignor', 'Consignee', 'Description', 'Marks & Nos.', 'Packages', 'Weight', 'Volume']],
                 body: consignmentData,
                 theme: 'grid',
-                styles: { fontSize: 9, lineWidth: 0.5, cellPadding: 2 },
+                styles: { fontSize: 9, lineWidth: 1.0, cellPadding: 2 },
                 headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' },
                 margin: { left: margin, right: margin },
                 didDrawPage: function (data) {
