@@ -649,8 +649,8 @@ async function generatePDF() {
 
         yPos += boxHeight + 10;
 
-        // Table 3: Remarks Section
-        ensureSpace(40);
+// Table 3: Remarks Section
+        ensureSpace(40);  // Make sure there's enough space before the table
         pdf.autoTable({
             startY: yPos,
             body: [
@@ -659,29 +659,36 @@ async function generatePDF() {
                 ['Others', `{{ form['others'] }}`]
             ],
             theme: 'grid',
-            styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0, 0, 0], cellPadding: 2 },
+            styles: {
+                fontSize: 10,
+                lineWidth: 0.5,
+                lineColor: [0, 0, 0],
+                cellPadding: 2,
+                textColor: [0, 0, 0]
+            },
             margin: { left: margin, right: margin },
             didDrawPage: function (data) {
                 // Only draw header if it's a new page
                 if (pdf.internal.getCurrentPageInfo().pageNumber > 1) {
                     const newY = drawHeader(pdf);  // redraw header
-                    data.cursor.y = newY + 5;      // shift cursor below the header to prevent overlap
+                    data.cursor.y = newY + 5;      // avoid overlap
                 }
             }
         });
-
-            let signY = yPos + 20;  // Move this below the table area
-            
-            // Left-aligned note
-            pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, signY);
-            
-            // Right-aligned signature section
-            pdf.text('For Viking Marine Inc.', pageWidth - margin, signY, { align: 'right' });
-            pdf.text('Authorised Signatory', pageWidth - margin, signY + 8, { align: 'right' });
-            pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, pageWidth - margin, signY + 16, { align: 'right' });
-            
-            // Add space after signature
-            signY += 30;  // Reserve space if more elements follow
+        
+        // ✅ Use final Y of the table to position the signature block
+        let finalTableY = pdf.autoTable.previous.finalY || yPos;
+        let signY = finalTableY + 20;  // Add spacing below the table
+        
+        // ✍️ Signature and footer block
+        pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, signY);
+        
+        pdf.text('For Viking Marine Inc.', pageWidth - margin, signY, { align: 'right' });
+        pdf.text('Authorised Signatory', pageWidth - margin, signY + 8, { align: 'right' });
+        pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, pageWidth - margin, signY + 16, { align: 'right' });
+        
+        // 🧭 Optional: reserve more space below if needed
+        signY += 30;
         pdf.save('FCL_Report.pdf');
     } catch (error) {
         console.error('PDF Generation Error:', error);
