@@ -678,7 +678,7 @@ async function generatePDF() {
         
         // ✅ Use final Y of the table to position the signature block
         let finalTableY = pdf.autoTable.previous.finalY || yPos;
-        let signY = finalTableY + 20;  // Add spacing below the table
+        let signY = finalTableY + 30;  // Add spacing below the table
         
         // ✍️ Signature and footer block
         pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, signY);
