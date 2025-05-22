@@ -18,7 +18,7 @@ h1 {
             -webkit-text-fill-color: #da3936;
         }
 
-        
+
         .footer {
             text-align: center;
             padding: 10px;
@@ -142,7 +142,7 @@ h1 {
         .nav-links {
             display: none;
         }
-        
+
         .hamburger {
             display: block;
         }
@@ -157,13 +157,13 @@ h1 {
       text-align: center;
       min-width: 150px;
   }
-  
+
   /* ✅ Status Colors */
   .status-open { background-color: rgb(0, 203, 0); color: white; }
   .status-in-progress { background-color: yellow; color: black; }
   .status-completed { background-color: red; color: white; }
   .status-unknown { background-color: gray; color: white; }
-  
+
   /* ✅ Small Status Circle */
   .status-circle {
       width: 10px;
@@ -272,7 +272,7 @@ h1 {
     {% else %}
         <p>No FCL report data available.</p>
     {% endif %}
-    
+
         <!-- Report Title -->
         <div class="border-t border-b border-gray-300 py-2 mb-4"  >
             <h2 class="text-lg font-semibold text-center">FCL STUFFING SURVEY REPORT</h2>
@@ -555,50 +555,52 @@ async function generatePDF() {
             }
         };
 
-               ensureSpace(60);
-                pdf.autoTable({
-                    startY: yPos,
-                    theme: 'grid',
-                    styles: {
-                        fontSize: 10,
-                        lineColor: [0, 0, 0],      // Border color
-                        lineWidth: 0.5,            // Border thickness
-                        halign: 'left',
-                        textColor: [0, 0, 0],      // Black text
-                        cellPadding: 3
-                    },
-                    headStyles: {
-                        fillColor: [0, 0, 0],       // Black header background
-                        textColor: [255, 255, 255], // White header text
-                        fontStyle: 'bold'
-                    },
-                    body: [
-                        ['Applicant for Survey', `{{ form['applicant_name'] }}`],
-                        ['Container No.', `{{ form['container_number'] }}`],
-                        ['Size/Type', `{{ form['size_type'] }}`],
-                        ['Stuffing Completion', `{{ form['stuffing_comp_date_time'] }}`],
-                        ['Tare Weight (Kgs)', `{{ form['tare_weight'] }}`],
-                        ['Seal Number', `{{ form['seal_number'] }}`],
-                        ['Payload Capacity', `{{ form['payload_capacity'] }}`],
-                        ['Seal Date/Time', `{{ form['stuffing_comp_date_time'] }}`],
-                        ['Port of Discharge', `{{ form['port_of_discharge'] }}`],
-                        ['Place of Stuffing', `{{ form['place_of_stuffing'] }}`]
-                    ],
-                    columnStyles: {
-                        0: { cellWidth: 60, fontStyle: 'bold' },  // Label
-                        1: { cellWidth: 120 }                     // Value
-                    },
-                    tableLineColor: [0, 0, 0],   // Table border lines
-                    tableLineWidth: 1.0,
-                    margin: { left: margin, right: margin }
-                });
+        // Table 1: Container Details (NO header here — header is handled globally)
+        ensureSpace(60);
+        pdf.autoTable({
+            startY: yPos,
+            styles: {
+                fontSize: 10,
+                lineColor: [0, 0, 0],      // Border color
+                lineWidth: 0.5,            // Border thickness
+                halign: 'left'
+            },
+            headStyles: {
+                fillColor: [0, 0, 0],       // Black background for headers
+                textColor: [255, 255, 255], // White text
+                fontStyle: 'bold'
+            },
+            body: [
+                ['Applicant for Survey', `{{ form['applicant_name'] }}`],
+                ['Container No.', `{{ form['container_number'] }}`],
+                ['Size/Type', `{{ form['size_type'] }}`],
+                ['Stuffing Completion', `{{ form['stuffing_comp_date_time'] }}`],
+                ['Tare Weight (Kgs)', `{{ form['tare_weight'] }}`],
+                ['Seal Number', `{{ form['seal_number'] }}`],
+                ['Payload Capacity', `{{ form['payload_capacity'] }}`],
+                ['Seal Date/Time', `{{ form['stuffing_comp_date_time'] }}`],
+                ['Port of Discharge', `{{ form['port_of_discharge'] }}`],
+                ['Place of Stuffing', `{{ form['place_of_stuffing'] }}`]
+            ],
+            columnStyles: {
+                0: { cellWidth: 60, fontStyle: 'bold' },
+                1: { cellWidth: 120 }
+            },
+            tableLineColor: [0, 0, 0],     // Ensure table border lines are black
+            tableLineWidth: 1.5,
+            margin: { left: margin, right: margin }
+        });
+             
+
+        yPos = pdf.lastAutoTable.finalY + 10;
+
         // Table 2: Consignment
         const consignmentData = Array.from(document.querySelectorAll('#consignment-table tbody tr'))
             .map(row => Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim()));
 
             const gapInMM = 30;
             const gapInPts = pdf.internal.scaleFactor * gapInMM; // Convert mm to points
-            
+
             pdf.autoTable({
                 startY: yPos,
                 head: [['Consignor', 'Consignee', 'Description', 'Marks & Nos.', 'Packages', 'Weight', 'Volume']],
@@ -609,7 +611,7 @@ async function generatePDF() {
                 margin: { left: margin, right: margin },
                 didDrawPage: function (data) {
                     drawHeader(pdf);
-            
+
                     // If we're on a page AFTER the first table page, apply top spacing
                     if (pdf.internal.getNumberOfPages() > 1 && data.pageCount > 1 && data.cursor.y <= 50) {
                         pdf.setPage(pdf.internal.getCurrentPageInfo().pageNumber);
@@ -672,18 +674,18 @@ async function generatePDF() {
                 }
             }
         });
-        
+
         // ✅ Use final Y of the table to position the signature block
         let finalTableY = pdf.autoTable.previous.finalY || yPos;
         let signY = finalTableY + 50;  // Add spacing below the table
-        
+
         // ✍️ Signature and footer block
         pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, signY);
-        
+
         pdf.text('For Viking Marine Inc.', pageWidth - margin, signY, { align: 'right' });
         pdf.text('Authorised Signatory', pageWidth - margin, signY + 8, { align: 'right' });
         pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, pageWidth - margin, signY + 36, { align: 'right' });
-        
+
         // 🧭 Optional: reserve more space below if needed
         signY += 30;
         pdf.save('FCL_Report.pdf');
