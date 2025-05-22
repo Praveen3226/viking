@@ -556,40 +556,44 @@ async function generatePDF() {
         };
 
         // Table 1: Container Details (NO header here — header is handled globally)
-        ensureSpace(60);
-        pdf.autoTable({
-            startY: yPos,
-            styles: {
-                fontSize: 10,
-                lineColor: [0, 0, 0],      // Border color
-                lineWidth: 0.5,            // Border thickness
-                halign: 'left'
-            },
-            headStyles: {
-                fillColor: [0, 0, 0],       // Black background for headers
-                textColor: [255, 255, 255], // White text
-                fontStyle: 'bold'
-            },
-            body: [
-                ['Applicant for Survey', `{{ form['applicant_name'] }}`],
-                ['Container No.', `{{ form['container_number'] }}`],
-                ['Size/Type', `{{ form['size_type'] }}`],
-                ['Stuffing Completion', `{{ form['stuffing_comp_date_time'] }}`],
-                ['Tare Weight (Kgs)', `{{ form['tare_weight'] }}`],
-                ['Seal Number', `{{ form['seal_number'] }}`],
-                ['Payload Capacity', `{{ form['payload_capacity'] }}`],
-                ['Seal Date/Time', `{{ form['stuffing_comp_date_time'] }}`],
-                ['Port of Discharge', `{{ form['port_of_discharge'] }}`],
-                ['Place of Stuffing', `{{ form['place_of_stuffing'] }}`]
-            ],
-            columnStyles: {
-                0: { cellWidth: 60, fontStyle: 'bold' },
-                1: { cellWidth: 120 }
-            },
-            tableLineColor: [0, 0, 0],     // Ensure table border lines are black
-            tableLineWidth: 1.5,
-            margin: { left: margin, right: margin }
-        });
+                ensureSpace(60);
+                pdf.autoTable({
+                    startY: yPos,
+                    theme: 'grid',
+                    styles: {
+                        fontSize: 10,
+                        lineColor: [0, 0, 0],      // Border color
+                        lineWidth: 0.5,            // Border thickness
+                        halign: 'left',
+                        textColor: [0, 0, 0],      // Black text
+                        cellPadding: 2
+                    },
+                    headStyles: {
+                        fillColor: [0, 0, 0],       // Black header background
+                        textColor: [255, 255, 255], // White header text
+                        fontStyle: 'bold'
+                    },
+                    body: [
+                        ['Applicant for Survey', `{{ form['applicant_name'] }}`],
+                        ['Container No.', `{{ form['container_number'] }}`],
+                        ['Size/Type', `{{ form['size_type'] }}`],
+                        ['Stuffing Completion', `{{ form['stuffing_comp_date_time'] }}`],
+                        ['Tare Weight (Kgs)', `{{ form['tare_weight'] }}`],
+                        ['Seal Number', `{{ form['seal_number'] }}`],
+                        ['Payload Capacity', `{{ form['payload_capacity'] }}`],
+                        ['Seal Date/Time', `{{ form['stuffing_comp_date_time'] }}`],
+                        ['Port of Discharge', `{{ form['port_of_discharge'] }}`],
+                        ['Place of Stuffing', `{{ form['place_of_stuffing'] }}`]
+                    ],
+                    columnStyles: {
+                        0: { cellWidth: 60, fontStyle: 'bold' },  // Label
+                        1: { cellWidth: 120 }                     // Value
+                    },
+                    tableLineColor: [0, 0, 0],   // Table border lines
+                    tableLineWidth: 1.0,
+                    margin: { left: margin, right: margin }
+                });
+
 
         yPos = pdf.lastAutoTable.finalY + 10;
 
