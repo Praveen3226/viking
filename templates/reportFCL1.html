@@ -506,45 +506,46 @@ async function generatePDF() {
             });
         };
 
-        // Load logo
+        // Load logo once
         let headerImage = null;
         try {
             headerImage = await loadImageProps('/static/logo2.png');
-        } catch {
+        } catch (err) {
             console.warn("Logo not loaded, skipping image.");
         }
 
         const formattedDate = new Date("{{ form['date'] }}").toLocaleDateString('en-GB');
 
-        // 🔼 Draw Header Function
-        const drawHeader = (doc) => {
-            let y = margin;
-            if (headerImage) {
-                doc.addImage(headerImage, 'PNG', margin, y, 180, 40);
-            }
+       const drawHeader = (doc) => {
+    let y = margin;
 
-            y += 45;
-            doc.setFontSize(10);
-            doc.line(margin, y, pageWidth - margin, y);
-            y += 5;
+    if (headerImage) {
+        doc.addImage(headerImage, 'PNG', margin, y, 180, 40);
+    }
 
-            doc.text(`Report No.: {{ form['CertificateNumber'] }}`, margin, y);
-            doc.text(`Date: ${formattedDate}`, pageWidth - margin, y, { align: 'right' });
+    y += 45;
 
-            y += 4;
-            doc.line(margin, y, pageWidth - margin, y);
-            y += 6;
+    doc.setFontSize(10);
+    doc.setDrawColor(0);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 5;
 
-            doc.setFillColor(185, 28, 28);
-            doc.rect(margin, y, pageWidth - margin * 2, 10, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(14);
-            doc.text("STUFFING SURVEY REPORT", pageWidth / 2, y + 7, { align: 'center' });
-            doc.setTextColor(0, 0, 0);
+    doc.text(`Report No.: {{ form['CertificateNumber'] }}`, margin, y);
+    doc.text(`Date: ${formattedDate}`, pageWidth - margin, y, { align: 'right' });
 
-            return y + 15;
-        };
+    y += 4;
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 6;
 
+    doc.setFillColor(185, 28, 28);
+    doc.rect(margin, y, pageWidth - margin * 2, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.text("STUFFING SURVEY REPORT", pageWidth / 2, y + 7, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+
+    return y + 15; // Return new Y position after header
+};
         let yPos = drawHeader(pdf);
 
         const ensureSpace = (heightNeeded) => {
@@ -554,10 +555,21 @@ async function generatePDF() {
             }
         };
 
-        // ➕ Table 1: Container Details
+        // Table 1: Container Details (NO header here — header is handled globally)
         ensureSpace(60);
         pdf.autoTable({
             startY: yPos,
+            styles: {
+                fontSize: 10,
+                lineColor: [0, 0, 0],      // Border color
+                lineWidth: 0.5,            // Border thickness
+                halign: 'left'
+            },
+            headStyles: {
+                fillColor: [0, 0, 0],       // Black background for headers
+                textColor: [255, 255, 255], // White text
+                fontStyle: 'bold'
+            },
             body: [
                 ['Applicant for Survey', `{{ form['applicant_name'] }}`],
                 ['Container No.', `{{ form['container_number'] }}`],
@@ -570,41 +582,57 @@ async function generatePDF() {
                 ['Port of Discharge', `{{ form['port_of_discharge'] }}`],
                 ['Place of Stuffing', `{{ form['place_of_stuffing'] }}`]
             ],
-            styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0, 0, 0], cellPadding: 2 },
             columnStyles: {
-                0: { cellWidth: 60, fontStyle: 'bold' },
-                1: { cellWidth: 130 }
+                0: { cellWidth: 60, fontStyle: 'bold' ,cellPadding: 2 },
+                1: { cellWidth: 130 , cellPadding: 2 }
             },
-            theme: 'grid',
-            margin: { left: margin, right: margin },
-            head: [],
+            tableLineColor: [0, 0, 0],     // Ensure table border lines are black
+            tableLineWidth: 0.5,
+            margin: { left: margin, right: margin }
         });
+
+
         yPos = pdf.lastAutoTable.finalY + 10;
 
-        // ➕ Table 2: Consignment Table
+        // Table 2: Consignment
+        const BLANK_LINES_AFTER_BREAK = 3;
+        // Estimate your line‐height in mm (this depends on your font size; ~4 mm is a reasonable default at 10pt)
+        const LINE_HEIGHT_MM = 4;
+        const EXTRA_TOP_MARGIN = BLANK_LINES_AFTER_BREAK * LINE_HEIGHT_MM;
         const consignmentData = Array.from(document.querySelectorAll('#consignment-table tbody tr'))
             .map(row => Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim()));
 
-        ensureSpace(100);
-        pdf.autoTable({
-            startY: yPos,
-            head: [['Consignor', 'Consignee', 'Description', 'Marks & Nos.', 'Packages', 'Weight', 'Volume']],
-            body: consignmentData,
-            styles: { fontSize: 9, lineWidth: 0.5, lineColor: [0, 0, 0], cellPadding: 2 },
-            headStyles: { fillColor: [0, 0, 0], textColor: 255, fontStyle: 'bold' },
-            theme: 'grid',
-            margin: { left: margin, right: margin },
-            didDrawPage: (data) => {
-                if (pdf.internal.getCurrentPageInfo().pageNumber > 1) {
-                    const newY = drawHeader(pdf);
-                    data.cursor.y = newY + 5;
+            const gapInMM = 30;
+            const gapInPts = pdf.internal.scaleFactor * gapInMM; // Convert mm to points
+
+            pdf.autoTable({
+                startY: yPos,
+                head: [['Consignor', 'Consignee', 'Description', 'Marks & Nos.', 'Packages', 'Weight', 'Volume']],
+                body: consignmentData,
+                theme: 'grid',
+                styles: { fontSize: 9,lineWidth: 0.5,lineColor: [0, 0, 0], cellPadding: 2 },
+                headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' },
+                margin: { left: margin, right: margin 
+                top: margin + EXTRA_TOP_MARGIN
+                },
+                 
+                margin: { left: margin, right: margin },
+                didDrawPage: function (data) {
+                    drawHeader(pdf);
+
+                    // If we're on a page AFTER the first table page, apply top spacing
+                    if (pdf.internal.getNumberOfPages() > 1 && data.pageCount > 1 && data.cursor.y <= 50) {
+                        pdf.setPage(pdf.internal.getCurrentPageInfo().pageNumber);
+                        pdf.setDrawColor(255); // invisible line trick
+                        pdf.line(0, gapInPts, 0, gapInPts); // just moves the cursor
+                        data.cursor.y = gapInPts;
+                    }
                 }
-            }
-        });
+            });
 
         yPos = pdf.lastAutoTable.finalY + 10;
 
-        // 📦 Summary Boxes
+        // Summary Boxes
         const summaryValues = {
             volume: `{{ form['cbm'] }}`,
             totalPackages: `{{ form['totalPackages'] }}`,
@@ -615,21 +643,21 @@ async function generatePDF() {
         const boxWidth = (pageWidth - margin * 2 - 15) / 4;
         const boxHeight = 25;
 
-        Object.entries(summaryValues).forEach(([label, value], index) => {
-            const x = margin + index * (boxWidth + 5);
+        Object.values(summaryValues).forEach((value, index) => {
+            const xPos = margin + index * (boxWidth + 5);
             pdf.setDrawColor(0);
             pdf.setFillColor(255, 255, 255);
-            pdf.rect(x, yPos, boxWidth, boxHeight, 'FD');
+            pdf.rect(xPos, yPos, boxWidth, boxHeight, 'FD');
             pdf.setFontSize(10);
-            pdf.text(['Total Volume', 'Total Packages', 'Gross Weight', 'Container Weight'][index], x + boxWidth / 2, yPos + 9, { align: 'center' });
+            pdf.text(['Total Volume', 'Total Packages', 'Gross Weight', 'Container Weight'][index], xPos + boxWidth / 2, yPos + 9, { align: 'center' });
             pdf.setFontSize(12);
-            pdf.text(`${value} ${['CBM', 'Pkgs', 'Kgs', 'Kgs'][index]}`, x + boxWidth / 2, yPos + 19, { align: 'center' });
+            pdf.text(`${value} ${['CBM', 'Pkgs', 'Kgs', 'Kgs'][index]}`, xPos + boxWidth / 2, yPos + 19, { align: 'center' });
         });
 
         yPos += boxHeight + 10;
 
-        // 🗒 Table 3: Remarks
-        ensureSpace(40);
+// Table 3: Remarks Section
+        ensureSpace(40);  // Make sure there's enough space before the table
         pdf.autoTable({
             startY: yPos,
             body: [
@@ -637,34 +665,43 @@ async function generatePDF() {
                 ['Lashing', `{{ form['lashing'] }}`],
                 ['Others', `{{ form['others'] }}`]
             ],
-            styles: { fontSize: 10, lineWidth: 0.5, lineColor: [0, 0, 0], cellPadding: 2 },
             theme: 'grid',
+            styles: {
+                fontSize: 10,
+                lineWidth: 0.5,
+                lineColor: [0, 0, 0],
+                cellPadding: 2,
+                textColor: [0, 0, 0]
+            },
             margin: { left: margin, right: margin },
-            didDrawPage: (data) => {
+            didDrawPage: function (data) {
+                // Only draw header if it's a new page
                 if (pdf.internal.getCurrentPageInfo().pageNumber > 1) {
-                    const newY = drawHeader(pdf);
-                    data.cursor.y = newY + 5;
+                    const newY = drawHeader(pdf);  // redraw header
+                    data.cursor.y = newY + 5;      // avoid overlap
                 }
             }
         });
 
-        yPos = pdf.lastAutoTable.finalY + 10;
+        // ✅ Use final Y of the table to position the signature block
+        let finalTableY = pdf.autoTable.previous.finalY || yPos;
+        let signY = finalTableY + 50;  // Add spacing below the table
 
-        // ✍️ Signature Block
-        pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, yPos + 20);
-        pdf.text('For Viking Marine Inc.', pageWidth - margin, yPos + 20, { align: 'right' });
-        pdf.text('Authorised Signatory', pageWidth - margin, yPos + 28, { align: 'right' });
-        pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, pageWidth - margin, yPos + 56, { align: 'right' });
+        // ✍️ Signature and footer block
+        pdf.text('"ISSUED WITHOUT PREJUDICE"', margin, signY);
 
-        // 💾 Save PDF
+        pdf.text('For Viking Marine Inc.', pageWidth - margin, signY, { align: 'right' });
+        pdf.text('Authorised Signatory', pageWidth - margin, signY + 8, { align: 'right' });
+        pdf.text(`Surveyor: {{ form['surveyor_name'] }}`, pageWidth - margin, signY + 36, { align: 'right' });
+
+        // 🧭 Optional: reserve more space below if needed
+        signY += 30;
         pdf.save('FCL_Report.pdf');
-
     } catch (error) {
         console.error('PDF Generation Error:', error);
         alert(`PDF Generation Failed: ${error.message}`);
     }
 }
-
 
 </script>
 
