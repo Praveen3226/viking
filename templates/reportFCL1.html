@@ -587,6 +587,7 @@ async function generatePDF() {
                 1: { cellWidth: 130 , cellPadding: 2 }
             },
             tableLineColor: [0, 0, 0],     // Ensure table border lines are black
+            tableLineWidth: 1.0,
             tableLineWidth: 0.5,
             margin: { left: margin, right: margin }
         });
@@ -595,10 +596,6 @@ async function generatePDF() {
         yPos = pdf.lastAutoTable.finalY + 10;
 
         // Table 2: Consignment
-        const BLANK_LINES_AFTER_BREAK = 3;
-        // Estimate your line‐height in mm (this depends on your font size; ~4 mm is a reasonable default at 10pt)
-        const LINE_HEIGHT_MM = 4;
-        const EXTRA_TOP_MARGIN = BLANK_LINES_AFTER_BREAK * LINE_HEIGHT_MM;
         const consignmentData = Array.from(document.querySelectorAll('#consignment-table tbody tr'))
             .map(row => Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim()));
 
@@ -610,12 +607,9 @@ async function generatePDF() {
                 head: [['Consignor', 'Consignee', 'Description', 'Marks & Nos.', 'Packages', 'Weight', 'Volume']],
                 body: consignmentData,
                 theme: 'grid',
+                styles: { fontSize: 9, lineWidth: 1.0, cellPadding: 2 },
                 styles: { fontSize: 9,lineWidth: 0.5,lineColor: [0, 0, 0], cellPadding: 2 },
                 headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold' },
-                margin: { left: margin, right: margin 
-                top: margin + EXTRA_TOP_MARGIN
-                },
-                 
                 margin: { left: margin, right: margin },
                 didDrawPage: function (data) {
                     drawHeader(pdf);
